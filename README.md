@@ -1,2 +1,9 @@
 # RiKaya-OS
-OS for the "Sistemi Operativi" class. 
+2018 - 2019 
+
+O.S. for the "Sistemi Operativi" course. 
+
+-Francesco Mollica
+-Giosuè Cotugno
+-Michele Gaspari
+-Stefano Faieta
