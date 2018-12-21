@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
     readline(buf, LINE_BUF_SIZE);
     term_puts("Started to print ...\n \n");
     
-    if(sendtoprinter(buf)) term_puts("Print complete!\n");
+    if(sendtoprinter(buf)) term_puts("Print completed!\n");
 
     halt();
 
