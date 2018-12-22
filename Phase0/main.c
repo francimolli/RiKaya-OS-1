@@ -10,6 +10,62 @@
 static char buf[LINE_BUF_SIZE];
 static char word[CONVERTED_WORD_SIZE];
 
+
+unsigned int strlen (char *str) {
+
+    unsigned int len = 0;
+
+    while(*(str++) != '\0' && ++len) ;
+
+    return len;
+
+}
+
+char digitToChar (unsigned int n) {
+    
+    char c = '0';
+    return c + n;
+
+}
+
+unsigned int exp10 (int e) {
+
+    unsigned int value = 1;
+    while (e-- > 0) value *= 10;
+    return value;
+
+}
+
+char* uinttostr (unsigned int num, char* str) {
+   
+    char* firstelement = str;
+
+    int e = 1;
+    
+    
+    while (num >= exp10(e)) 
+        e++;
+    
+    
+    str += e;
+    *(str) = '\0';
+    str--;
+    
+    while (e > 0) {
+        
+        *str = digitToChar ( num % 10);
+        str--;
+        
+        num /= 10;
+        e--;
+
+
+    }
+
+    return firstelement;
+
+}
+
 int sendtoprinter(char* word)
 {
       return prin_puts(word);
@@ -41,7 +97,32 @@ int main(int argc, char *argv[])
     readline(buf, LINE_BUF_SIZE);
     term_puts("Started to print ...\n \n");
     
-    if(sendtoprinter(strToPunch(buf,word))) term_puts("Print complete!\n");
+    /* if(sendtoprinter(strToPunch(buf,word))) term_puts("Print complete!\n"); */
+    
+    char* tmpbuf = buf;
+    
+    unsigned int len = strlen(buf);
+    
+
+    char tmpstr[20];
+    
+    int error = 0;
+
+    unsigned int counter = 1;
+    while (tmpbuf && *tmpbuf != '\0') {
+        if(sendtoprinter(strToPunch(tmpbuf,word))) {
+            term_puts("printing - ");
+            term_puts(uinttostr((counter*100)/len,tmpstr));
+            term_puts("% ...\n");
+        }
+        else error = 1;
+        
+        tmpbuf++;
+        counter++;
+    }
+    
+    if (!error) term_puts("\nPRINT COMPLETED!\n");
+    
 
     halt();
 

@@ -15,7 +15,7 @@ char* charToPunch(char c, char* word) {
 
 
 /*create an unique string translating to PunchCard language*/
-/* 1 : * , 0 : - ES : 1011 -> *-** */
+/* "1" -> "*" , "0" -> "-" ES : 1011 -> *-** */
 
 char* strToPunch(char* str, char* buf) {
     
