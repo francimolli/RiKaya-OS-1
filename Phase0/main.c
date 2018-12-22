@@ -2,10 +2,13 @@
 #include "umps/arch.h"
 #include "terminal.h"
 #include "printer.h"
+#include "punchCard.h"
 
 #define LINE_BUF_SIZE 64
+#define CONVERTED_WORD_SIZE 64 * 9 + 1
 
 static char buf[LINE_BUF_SIZE];
+static char word[CONVERTED_WORD_SIZE];
 
 int sendtoprinter(char* word)
 {
@@ -38,7 +41,7 @@ int main(int argc, char *argv[])
     readline(buf, LINE_BUF_SIZE);
     term_puts("Started to print ...\n \n");
     
-    if(sendtoprinter(buf)) term_puts("Print completed!\n");
+    if(sendtoprinter(strToPunch(buf,word))) term_puts("Print complete!\n");
 
     halt();
 
