@@ -21,7 +21,7 @@ char* strToPunch(char* str, char* buf) {
     
     char* tmp = buf;
 
-    while (str && *str != '\0') {
+    if (str && *str != '\0') {
         tmp = charToPunch(*str,tmp);
         str++;
     }

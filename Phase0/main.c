@@ -5,7 +5,7 @@
 #include "punchCard.h"
 
 #define LINE_BUF_SIZE 64
-#define CONVERTED_WORD_SIZE 64 * 9 + 1
+#define CONVERTED_WORD_SIZE 64 * 9 + 1 + 4
 
 static char buf[LINE_BUF_SIZE];
 static char word[CONVERTED_WORD_SIZE];
@@ -19,6 +19,20 @@ unsigned int strlen (char *str) {
 
     return len;
 
+}
+
+char* strcat(char c, char *str){
+
+    int len = strlen(str);
+    len--;
+    for(; len >=  0; len--)
+	    str[len + 4] = str[len];
+    str[0] = c;
+    str[1] = ' ';
+    str[2] = '=';
+    str[3] = ' ';
+    
+    return str;
 }
 
 char digitToChar (unsigned int n) {
@@ -91,16 +105,15 @@ static void halt(void)
 
 int main(int argc, char *argv[])
 {
-
+	
+    char *tmpbuf = buf;
     term_puts("Insert what you want to print : \n");
 
     readline(buf, LINE_BUF_SIZE);
     term_puts("Started to print ...\n \n");
     
     /* if(sendtoprinter(strToPunch(buf,word))) term_puts("Print complete!\n"); */
-    
-    char* tmpbuf = buf;
-    
+        
     unsigned int len = strlen(buf);
     
 
@@ -110,7 +123,7 @@ int main(int argc, char *argv[])
 
     unsigned int counter = 1;
     while (tmpbuf && *tmpbuf != '\0') {
-        if(sendtoprinter(strToPunch(tmpbuf,word))) {
+        if(sendtoprinter(strcat(*tmpbuf,strToPunch(tmpbuf,word)))) {
             term_puts("printing - ");
             term_puts(uinttostr((counter*100)/len,tmpstr));
             term_puts("% ...\n");
