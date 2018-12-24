@@ -5,7 +5,11 @@
 #include "punchCard.h"
 
 #define LINE_BUF_SIZE 64
+<<<<<<< Updated upstream
 #define CONVERTED_WORD_SIZE 64 * 9 + 1 + 4
+=======
+#define CONVERTED_WORD_SIZE 10
+>>>>>>> Stashed changes
 
 static char buf[LINE_BUF_SIZE];
 static char word[CONVERTED_WORD_SIZE];
