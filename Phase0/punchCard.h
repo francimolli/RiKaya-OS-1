@@ -1,2 +1,2 @@
 char* charToPunch (char c, char* word);
-char* strToPunch (char* str, char* buf);
+char* cStrToPunch (char* str, char* buf);

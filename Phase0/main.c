@@ -5,11 +5,7 @@
 #include "punchCard.h"
 
 #define LINE_BUF_SIZE 64
-<<<<<<< Updated upstream
-#define CONVERTED_WORD_SIZE 64 * 9 + 1 + 4
-=======
 #define CONVERTED_WORD_SIZE 10
->>>>>>> Stashed changes
 
 static char buf[LINE_BUF_SIZE];
 static char word[CONVERTED_WORD_SIZE];
@@ -24,7 +20,7 @@ unsigned int strlen (char *str) {
     return len;
 
 }
-
+/*
 char* strcat(char c, char *str){
 
     int len = strlen(str);
@@ -38,7 +34,7 @@ char* strcat(char c, char *str){
     
     return str;
 }
-
+*/
 char digitToChar (unsigned int n) {
     
     char c = '0';
@@ -116,7 +112,6 @@ int main(int argc, char *argv[])
     readline(buf, LINE_BUF_SIZE);
     term_puts("Started to print ...\n \n");
     
-    /* if(sendtoprinter(strToPunch(buf,word))) term_puts("Print complete!\n"); */
         
     unsigned int len = strlen(buf);
     
@@ -127,7 +122,7 @@ int main(int argc, char *argv[])
 
     unsigned int counter = 1;
     while (tmpbuf && *tmpbuf != '\0') {
-        if(sendtoprinter(strcat(*tmpbuf,strToPunch(tmpbuf,word)))) {
+        if(sendtoprinter(cStrToPunch(tmpbuf,word))) {
             term_puts("printing - ");
             term_puts(uinttostr((counter*100)/len,tmpstr));
             term_puts("% ...\n");

@@ -2,9 +2,8 @@ char* charToPunch(char c, char* word) {
      
      int i;
      for (i = 7; i >= 0; i--) {
-         if (c & (1<<i)) *word = '*';
-         else *word = '-';
-         word++;
+         if (c & (1<<i)) *(word++) = '*';
+         else *(word++) = '-';
      }
      
      *(word++) = '\n';
@@ -14,16 +13,16 @@ char* charToPunch(char c, char* word) {
 }
 
 
-/*create an unique string translating to PunchCard language*/
-/* "1" -> "*" , "0" -> "-" ES : 1011 -> *-** */
-
-char* strToPunch(char* str, char* buf) {
+/*return the first character of a string translated into punchcard language*/
+/* "1" -> "*" , "0" -> "-" ES : 10110010 -> *-**--*-                       */
+char* cStrToPunch(char* str, char* buf) {
     
     char* tmp = buf;
-
-    if (str && *str != '\0') {
+    
+    if (*str == ' ') 
+        *(tmp++) = '\n';
+    else if (str && *str != '\0') {
         tmp = charToPunch(*str,tmp);
-        str++;
     }
 
     *(tmp) = '\0';

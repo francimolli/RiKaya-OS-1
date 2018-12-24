@@ -11,9 +11,6 @@
 #define CMD_ACK            1
 #define CMD_TRANSMIT       2
 
-#define CHAR_OFFSET        8
-#define TERM_STATUS_MASK   0xFF
-
 volatile dtpreg_t *printer = (dtpreg_t*) DEV_REG_ADDR(IL_PRINTER, 0);
 
 static unsigned int printer_status(volatile dtpreg_t *prin);
@@ -51,6 +48,6 @@ int prin_puts(char *str)
 
 static unsigned int printer_status(volatile dtpreg_t *prin)
 {
-    return ((prin->status) & TERM_STATUS_MASK);
+    return (prin->status);
 }
 
