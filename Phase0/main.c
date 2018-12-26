@@ -4,127 +4,43 @@
 #include "printer.h"
 #include "punchCard.h"
 
-#define LINE_BUF_SIZE 64
-#define CONVERTED_WORD_SIZE 10
+#define LINE_BUF_SIZE 64 /* lunghezza massima input */
+#define CONVERTED_WORD_SIZE 10 /* lunghezza di ogni carattere tradotto in - e * */
 
-static char buf[LINE_BUF_SIZE];
-static char word[CONVERTED_WORD_SIZE];
+static char buf[LINE_BUF_SIZE]; /* buffer di input */
+static char word[CONVERTED_WORD_SIZE]; /* array per memorizzare l'output */
 
+unsigned int strlen (char *str); /* prende in input una stringa e ne ritorna la lunghezza */
 
-unsigned int strlen (char *str) {
+char digitToChar (unsigned int n); /* dato un intero in input, ritorna il corrispondente valore nella tabella ASCII */
 
-    unsigned int len = 0;
+unsigned int exp10 (int e);
 
-    while(*(str++) != '\0' && ++len) ;
+char* uinttostr (unsigned int num, char* str); /* in base alla lettera che si ta traducendo viene stampata la percentuale di completamento */
 
-    return len;
+int sendtoprinter(char* word); /* manda alla stampante la stringa da stampare, ritorna 1 se la stampa va a buon fine */
 
-}
-/*
-char* strcat(char c, char *str){
+static void readline(char *buf, unsigned int count); /* legge una stringa in input dal terminale */
 
-    int len = strlen(str);
-    len--;
-    for(; len >=  0; len--)
-	    str[len + 4] = str[len];
-    str[0] = c;
-    str[1] = ' ';
-    str[2] = '=';
-    str[3] = ' ';
-    
-    return str;
-}
-*/
-char digitToChar (unsigned int n) {
-    
-    char c = '0';
-    return c + n;
+static void halt(void); /* spegne la macchina */
 
-}
-
-unsigned int exp10 (int e) {
-
-    unsigned int value = 1;
-    while (e-- > 0) value *= 10;
-    return value;
-
-}
-
-char* uinttostr (unsigned int num, char* str) {
-   
-    char* firstelement = str;
-
-    int e = 1;
-    
-    
-    while (num >= exp10(e)) 
-        e++;
-    
-    
-    str += e;
-    *(str) = '\0';
-    str--;
-    
-    while (e > 0) {
-        
-        *str = digitToChar ( num % 10);
-        str--;
-        
-        num /= 10;
-        e--;
-
-
-    }
-
-    return firstelement;
-
-}
-
-int sendtoprinter(char* word)
-{
-      return prin_puts(word);
-}
-
-static void readline(char *buf, unsigned int count)
-{
-    int c;
-
-    while (--count && (c = term_getchar()) != '\n')
-        *buf++ = c;
-
-    *buf = '\0';
-}
-
-
-static void halt(void)
-{
-    WAIT();
-    *((volatile unsigned int *) MCTL_POWER) = 0x0FF;
-    while (1) ;
-}
-
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
 	
     char *tmpbuf = buf;
+    
     term_puts("Insert what you want to print : \n");
-
     readline(buf, LINE_BUF_SIZE);
     term_puts("Started to print ...\n \n");
-    
         
-    unsigned int len = strlen(buf);
-    
-
-    char tmpstr[20];
-    
+    unsigned int len = strlen(buf); /* lunghezza input letto */
+    char tmpstr[20]; /* array utilizzato per stampare la percentuale di completamento */
     int error = 0;
-
-    unsigned int counter = 1;
+    unsigned int counter = 1; /* numero carattere dell'input che si sta traducendo */
+    
     while (tmpbuf && *tmpbuf != '\0') {
-        if(sendtoprinter(cStrToPunch(tmpbuf,word))) {
+        if(sendtoprinter(cStrToPunch(tmpbuf,word))) { /* cStrToPunch tarduce il carattere puntato da tmpbuf in sequenze di - e * */
             term_puts("printing - ");
-            term_puts(uinttostr((counter*100)/len,tmpstr));
+            term_puts(uinttostr((counter*100)/len,tmpstr)); /* stampa nel terminale della percentuale di completamento */
             term_puts("% ...\n");
         }
         else error = 1;
@@ -135,8 +51,80 @@ int main(int argc, char *argv[])
     
     if (!error) term_puts("\nPRINT COMPLETED!\n");
     
-
     halt();
 
     return 0;
+}
+
+unsigned int strlen (char *str) {
+
+    unsigned int len = 0;
+
+    while(*(str++) != '\0' && ++len) ;
+
+    return len;
+}
+
+char digitToChar (unsigned int n) {
+    
+    char c = '0';
+    
+    return c + n;
+}
+
+unsigned int exp10 (int e) {
+
+    unsigned int value = 1;
+    
+    while (e-- > 0) 
+	    value *= 10;
+    
+    return value;
+}
+
+char* uinttostr (unsigned int num, char* str) {
+    /* funzione necessaria per convertire un intero in una stringa del momento che il terminale può ricevere solo stringhe e non interi */
+    char* firstelement = str;
+    int e = 1; /* variabile per individuare il numero di cifre del completamento */
+    
+    while (num >=  exp10(e)) 
+        e++;
+   
+    str += e; /* si avanza nell'array per la stampa della percentuale di completamento di un numero di cifre (posizioni) pari ad e*/
+    *(str) = '\0';
+    str--;
+    
+    while (e > 0) {
+        /* si inseriscono le cifre della percentuale nell'array a ritroso, in modo da inserire la cifra meno significativa per prima */
+        *str = digitToChar ( num % 10);
+        str--;    
+        num /= 10;
+        e--;
+    }
+
+    return firstelement;
+}
+
+int sendtoprinter(char* word) {
+      
+    return prin_puts(word);
+}
+
+static void readline(char *buf, unsigned int count) {
+    
+    int c;
+
+    while (--count && (c = term_getchar()) != '\n')
+        *buf++ = c;
+
+    *buf = '\0';
+}
+
+static void halt(void) {
+    
+    WAIT();
+    
+    *((volatile unsigned int *) MCTL_POWER) = 0x0FF;
+    
+    while(1);
 }
