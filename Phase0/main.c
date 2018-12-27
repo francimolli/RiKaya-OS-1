@@ -143,7 +143,7 @@ static void getPrint() {
 int request() {
 
     term_puts("May need another print ? (S/n)\n");
-    readline(ins, 333);
+    readline(ins, 3);
     term_puts("\n");    
 
     if(*ins == 's' || *ins == 'S' ) return(sendtoprinter(enter));
