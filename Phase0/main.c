@@ -10,7 +10,7 @@
 static char buf[LINE_BUF_SIZE]; /* buffer di input */
 static char word[CONVERTED_WORD_SIZE]; /* array per memorizzare l'output */
 static char ins[2]; /* array per memorizzare risposta(s/n) */
-static char enter[] = "\n------------\n\n";
+static char enter[] = "\n------------\n\n\0";
 
 unsigned int strlen (char *str); /* prende in input una stringa e ne ritorna la lunghezza */
 
@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
     	x = request();
     }
      
-    term_puts("\nPRINT COMPLETED!\n");
+    term_puts("\nEND PRINT\n");
     
     halt();
 
@@ -125,7 +125,7 @@ static void getPrint() {
     int error = 0;
     unsigned int counter = 1; /* numero carattere dell'input che si sta traducendo */
 
-    while (tmpbuf && *tmpbuf != '\0') {
+    while (tmpbuf && *tmpbuf != '\0' && !error) {
         if(sendtoprinter(cStrToPunch(tmpbuf,word))) { /* cStrToPunch tarduce il carattere puntato da tmpbuf in sequenze di - e * */
             term_puts("printing - ");
             term_puts(uinttostr((counter*100)/len,tmpstr)); /* stampa nel terminale della percentuale di completamento */
@@ -141,14 +141,12 @@ static void getPrint() {
 }
 
 int request() {
-    char s[1] = "s";
-    char t[1] = "S";
 
     term_puts("May need another print ? (S/n)\n");
-    readline(ins, CONVERTED_WORD_SIZE);
+    readline(ins, 333);
     term_puts("\n");    
 
-    if(*ins == *s || *ins == *t) return(sendtoprinter(enter));
+    if(*ins == 's' || *ins == 'S' ) return(sendtoprinter(enter));
     else return 0;
 }
 
