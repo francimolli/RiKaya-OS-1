@@ -116,12 +116,15 @@ static void getPrint() {
 
     char *tmpbuf = bufASCII;
     
+    static int pagePrinted = 0;
+    pagePrinted ++ ;
+
     term_puts("Insert what you want to print : \n");
     readline(bufASCII, LINE_BUF_SIZE);
     term_puts("Started to print ...\n \n");
   
     unsigned int len = strlen(bufASCII); /* lunghezza input letto */
-    char tmpstr[20]; /* array utilizzato per stampare la percentuale di completamento */
+    char tmpstr[5]; /* array utilizzato per stampare la percentuale di completamento */
     int error = 0;
     unsigned int counter = 1; /* numero carattere dell'input che si sta traducendo */
 
