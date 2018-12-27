@@ -16,7 +16,7 @@ char digitToChar (unsigned int n); /* dato un intero in input, ritorna il corris
 
 unsigned int exp10 (int e);
 
-char* uinttostr (unsigned int num, char* str); /* in base alla lettera che si ta traducendo viene stampata la percentuale di completamento */
+char* uinttostr (unsigned int num, char* str); /* in base alla lettera che si sta traducendo viene convertita la percentuale di completamento da intero a stringa */
 
 int sendtoprinter(char* word); /* manda alla stampante la stringa da stampare, ritorna 1 se la stampa va a buon fine */
 
@@ -73,7 +73,7 @@ char digitToChar (unsigned int n) {
 }
 
 unsigned int exp10 (int e) {
-
+    
     unsigned int value = 1;
     
     while (e-- > 0) 
