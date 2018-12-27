@@ -4,13 +4,49 @@
 #include "printer.h"
 #include "punchCard.h"
 
-#define LINE_BUF_SIZE 64
-#define CONVERTED_WORD_SIZE 10
+#define LINE_BUF_SIZE 64 /* lunghezza massima input */
+#define CONVERTED_WORD_SIZE 10 /* lunghezza di ogni carattere tradotto in - e * */
 
-static char buf[LINE_BUF_SIZE];
-static char ins[CONVERTED_WORD_SIZE];
-static char word[CONVERTED_WORD_SIZE];
-static char enter[] = "* . * . * . * . * . * . * . * . * . * . * . * . * . * . * . * . *\n";
+static char buf[LINE_BUF_SIZE]; /* buffer di input */
+static char word[CONVERTED_WORD_SIZE]; /* array per memorizzare l'output */
+static char ins[CONVERTED_WORD_SIZE]; /* array per memorizzare risposta */
+static char enter[] = "------------\n";
+
+unsigned int strlen (char *str); /* prende in input una stringa e ne ritorna la lunghezza */
+
+char digitToChar (unsigned int n); /* dato un intero in input, ritorna il corrispondente valore nella tabella ASCII */
+
+unsigned int exp10 (int e);
+
+char* uinttostr (unsigned int num, char* str); /* in base alla lettera che si sta traducendo viene convertita la percentuale di completamento da intero a stringa */
+
+int sendtoprinter(char* word); /* manda alla stampante la stringa da stampare, ritorna 1 se la stampa va a buon fine */
+
+static void readline(char *buf, unsigned int count); /* legge una stringa in input dal terminale */
+
+static void read(char *ins, unsigned int count); /* simile a readline, serve a request */
+
+int request(); /* chiede all'utente se si vuole effettuare un ulteriore stampa */
+
+static void getPrint(); /* gestisce la stampa corrente, essendo possibili più stampe */
+
+static void halt(void); /* spegne la macchina */
+
+int main(int argc, char *argv[])
+{
+    unsigned int x = 1;
+    
+    while(x){ 
+        getPrint();
+    	x = request();
+    }
+     
+    term_puts("\nPRINT COMPLETED!\n");
+    
+    halt();
+
+    return 0;
+}
 
 unsigned int strlen (char *str) {
 
@@ -19,76 +55,55 @@ unsigned int strlen (char *str) {
     while(*(str++) != '\0' && ++len) ;
 
     return len;
-
 }
-/*
-char* strcat(char c, char *str){
-
-    int len = strlen(str);
-    len--;
-    for(; len >=  0; len--)
-	    str[len + 4] = str[len];
-    str[0] = c;
-    str[1] = ' ';
-    str[2] = '=';
-    str[3] = ' ';
-    
-    return str;
-}
-*/
 
 char digitToChar (unsigned int n) {
     
     char c = '0';
+    
     return c + n;
-
 }
 
 unsigned int exp10 (int e) {
-
+    
     unsigned int value = 1;
-    while (e-- > 0) value *= 10;
+    
+    while (e-- > 0) 
+	    value *= 10;
+    
     return value;
-
 }
 
 char* uinttostr (unsigned int num, char* str) {
-   
+    /* funzione necessaria per convertire un intero in una stringa del momento che il terminale può ricevere solo stringhe e non interi */
     char* firstelement = str;
-
-    int e = 1;
+    int e = 1; /* variabile per individuare il numero di cifre del completamento */
     
-    
-    while (num >= exp10(e)) 
+    while (num >=  exp10(e)) 
         e++;
-    
-    
-    str += e;
+   
+    str += e; /* si avanza nell'array per la stampa della percentuale di completamento di un numero di cifre (posizioni) pari ad e*/
     *(str) = '\0';
     str--;
     
     while (e > 0) {
-        
+        /* si inseriscono le cifre della percentuale nell'array a ritroso, in modo da inserire la cifra meno significativa per prima */
         *str = digitToChar ( num % 10);
-        str--;
-        
+        str--;    
         num /= 10;
         e--;
-
-
     }
 
     return firstelement;
-
 }
 
-int sendtoprinter(char* word)
-{
-      return prin_puts(word);
+int sendtoprinter(char* word) {
+      
+    return prin_puts(word);
 }
 
-static void readline(char *buf, unsigned int count)
-{
+static void readline(char *buf, unsigned int count) {
+    
     int c;
 
     while (--count && (c = term_getchar()) != '\n')
@@ -97,47 +112,32 @@ static void readline(char *buf, unsigned int count)
     *buf = '\0';
 }
 
-static void read(char *ins, unsigned int count)
-{
+static void read(char *ins, unsigned int count) {
     int c;
 
     while(--count && (c = term_getchar()) != '\n')
 	*ins++ = c;
 
     *ins = '\0';
-
 }
 
-static void halt(void)
-{
-    WAIT();
-    *((volatile unsigned int *) MCTL_POWER) = 0x0FF;
-    while (1) ;
-}
+static void getPrint() {
 
-static void getPrint()
-{
-
-char *tmpbuf = buf;
+    char *tmpbuf = buf;
+    
     term_puts("Insert what you want to print : \n");
-
     readline(buf, LINE_BUF_SIZE);
     term_puts("Started to print ...\n \n");
-   
-
-    unsigned int len = strlen(buf);
-    
-
-    char tmpstr[20];
-    
+  
+    unsigned int len = strlen(buf); /* lunghezza input letto */
+    char tmpstr[20]; /* array utilizzato per stampare la percentuale di completamento */
     int error = 0;
-
-    unsigned int counter = 1;
+    unsigned int counter = 1; /* numero carattere dell'input che si sta traducendo */
 
     while (tmpbuf && *tmpbuf != '\0') {
-        if(sendtoprinter(cStrToPunch(tmpbuf,word))) {
+        if(sendtoprinter(cStrToPunch(tmpbuf,word))) { /* cStrToPunch tarduce il carattere puntato da tmpbuf in sequenze di - e * */
             term_puts("printing - ");
-            term_puts(uinttostr((counter*100)/len,tmpstr));
+            term_puts(uinttostr((counter*100)/len,tmpstr)); /* stampa nel terminale della percentuale di completamento */
             term_puts("% ...\n");
         }
         else error = 1;
@@ -149,33 +149,23 @@ char *tmpbuf = buf;
     if (!error) term_puts("\nPRINT COMPLETED!\n \n");
 }
 
-int request()
-{
+int request() {
     char s[1] = "s";
     char t[1] = "S";
 
     term_puts("May need another print ? (S/n)\n");
-
     read(ins, CONVERTED_WORD_SIZE);
-    
     term_puts("\n");    
 
     if(*ins == *s || *ins == *t) return(sendtoprinter(enter));
-	else return 0;
+    else return 0;
 }
 
-int main(int argc, char *argv[])
-{
-    unsigned int x = 1;
+static void halt(void) {
     
-    while(x){
-        getPrint();
-    	x = request();
-    }
-     
-    term_puts("\nTHANKS, BYE!");
+    WAIT();
     
-    halt();
-
-    return 0;
+    *((volatile unsigned int *) MCTL_POWER) = 0x0FF;
+    
+    while(1);
 }
