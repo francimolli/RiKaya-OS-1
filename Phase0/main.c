@@ -9,8 +9,8 @@
 
 static char buf[LINE_BUF_SIZE]; /* buffer di input */
 static char word[CONVERTED_WORD_SIZE]; /* array per memorizzare l'output */
-static char ins[CONVERTED_WORD_SIZE]; /* array per memorizzare risposta */
-static char enter[] = "------------\n";
+static char ins[2]; /* array per memorizzare risposta(s/n) */
+static char enter[] = "\n------------\n\n";
 
 unsigned int strlen (char *str); /* prende in input una stringa e ne ritorna la lunghezza */
 
@@ -23,8 +23,6 @@ char* uinttostr (unsigned int num, char* str); /* in base alla lettera che si st
 int sendtoprinter(char* word); /* manda alla stampante la stringa da stampare, ritorna 1 se la stampa va a buon fine */
 
 static void readline(char *buf, unsigned int count); /* legge una stringa in input dal terminale */
-
-static void read(char *ins, unsigned int count); /* simile a readline, serve a request */
 
 int request(); /* chiede all'utente se si vuole effettuare un ulteriore stampa */
 
@@ -102,24 +100,17 @@ int sendtoprinter(char* word) {
     return prin_puts(word);
 }
 
-static void readline(char *buf, unsigned int count) {
+static void readline(char *p, unsigned int count) {
     
     int c;
 
     while (--count && (c = term_getchar()) != '\n')
-        *buf++ = c;
+        *p++ = c;
 
-    *buf = '\0';
+    *p = '\0';
 }
 
-static void read(char *ins, unsigned int count) {
-    int c;
 
-    while(--count && (c = term_getchar()) != '\n')
-	*ins++ = c;
-
-    *ins = '\0';
-}
 
 static void getPrint() {
 
@@ -154,7 +145,7 @@ int request() {
     char t[1] = "S";
 
     term_puts("May need another print ? (S/n)\n");
-    read(ins, CONVERTED_WORD_SIZE);
+    readline(ins, CONVERTED_WORD_SIZE);
     term_puts("\n");    
 
     if(*ins == *s || *ins == *t) return(sendtoprinter(enter));
