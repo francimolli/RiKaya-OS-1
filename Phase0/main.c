@@ -7,8 +7,8 @@
 #define LINE_BUF_SIZE 64 /* lunghezza massima input */
 #define CONVERTED_WORD_SIZE 10 /* lunghezza di ogni carattere tradotto in - e * */
 
-static char buf[LINE_BUF_SIZE]; /* buffer di input */
-static char word[CONVERTED_WORD_SIZE]; /* array per memorizzare l'output */
+static char bufASCII[LINE_BUF_SIZE]; /* buffer di input */
+static char wordPUNCH[CONVERTED_WORD_SIZE]; /* array per memorizzare l'output */
 static char ins[2]; /* array per memorizzare risposta(s/n) */
 static char enter[] = "\n------------\n\n\0";
 
@@ -114,19 +114,19 @@ static void readline(char *p, unsigned int count) {
 
 static void getPrint() {
 
-    char *tmpbuf = buf;
+    char *tmpbuf = bufASCII;
     
     term_puts("Insert what you want to print : \n");
-    readline(buf, LINE_BUF_SIZE);
+    readline(bufASCII, LINE_BUF_SIZE);
     term_puts("Started to print ...\n \n");
   
-    unsigned int len = strlen(buf); /* lunghezza input letto */
+    unsigned int len = strlen(bufASCII); /* lunghezza input letto */
     char tmpstr[20]; /* array utilizzato per stampare la percentuale di completamento */
     int error = 0;
     unsigned int counter = 1; /* numero carattere dell'input che si sta traducendo */
 
     while (tmpbuf && *tmpbuf != '\0' && !error) {
-        if(sendtoprinter(cStrToPunch(tmpbuf,word))) { /* cStrToPunch tarduce il carattere puntato da tmpbuf in sequenze di - e * */
+        if(sendtoprinter(cStrToPunch(tmpbuf,wordPUNCH))) { /* cStrToPunch tarduce il carattere puntato da tmpbuf in sequenze di - e * */
             term_puts("printing - ");
             term_puts(uinttostr((counter*100)/len,tmpstr)); /* stampa nel terminale della percentuale di completamento */
             term_puts("% ...\n");
