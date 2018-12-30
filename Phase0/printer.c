@@ -9,7 +9,7 @@
 
 #define CMD_RESET          0
 #define CMD_ACK            1
-#define CMD_TRANSMIT       2
+#define CMD_PRINTCHR       2
 
 volatile dtpreg_t *printer = (dtpreg_t*) DEV_REG_ADDR(IL_PRINTER, 0); /* puntatore che serve per accedere ai campi destinati alla stampante quali status, command, data0 (data1 non è utilizzato nelle stampanti). */
 static unsigned int printer_status(volatile dtpreg_t *prin); /* ritorna lo stato della stampante */
@@ -24,7 +24,7 @@ int prin_putchar(char c) {
         return 0;
 
     printer->data0 = c;
-    printer->command = CMD_TRANSMIT;
+    printer->command = CMD_PRINTCHR;
 
     while ((stat = printer_status(printer)) == ST_BUSY)
         ;
