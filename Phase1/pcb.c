@@ -102,9 +102,9 @@ pcb_t* outProcQ(struct list_head* head, pcb_t *p){
 	struct list_head *pos;
 	pcb_t *temp;
 	list_for_each(pos, head){
-		temp = container_of(head, pcb_t, p_next);
-		if(temp  == p){
-			list_del(head->next);
+		temp = container_of(pos, pcb_t, p_next);
+		if(temp == p){
+			list_del(pos);
 			return temp;
 		}
 	}
