@@ -88,8 +88,7 @@ pcb_t* headProcQ(struct list_head* head){
 }
 
 pcb_t* removeProcQ(struct list_head* head){
-	pcb_t *temp;
-	temp = container_of(head->next, pcb_t, p_next);
+	pcb_t *temp = headProcQ(head);
 	if(temp != NULL){
 		list_del(head->next);
 		return temp;
