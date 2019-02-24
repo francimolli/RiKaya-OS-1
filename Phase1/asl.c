@@ -1,4 +1,5 @@
 #include "asl.h"
+#include "pcb.h"
 #include <listx.h>
 #include <const.h>
 #include <stdio.h>
@@ -6,10 +7,10 @@
 semd_t semd_table[MAXPROC];
 
 semd_t semdFree;
-semd_t* semdFree_h;
+struct list_head semdFree_h;
 
 semd_t ASL;
-semd_t* semd_h;
+struct list_head semd_h;
 
 /*getSemd ritorna un puntatore al nodo della ASL con chiave pari a key;
  * se non c'è nessun semaforo attivo nella ASL con tale chiave 
@@ -20,7 +21,7 @@ semd_t* getSemd(int *key){
 		
 		struct list_head *pos;
 		
-		list_for_each(pos, &semd_h->s_next){
+		list_for_each(pos, &semd_h){
 			
 			semd_t* s = container_of(pos, semd_t, s_next);
 			
@@ -46,31 +47,32 @@ int insertBlocked(int *key, pcb_t *p){
 	semd_t* s = getSemd(key); 
 	
 	if(s != NULL){
-		//semd presente nell'ASL
+		insertProcQ(&s->s_procQ, p);
 		p->p_semkey = key;
-		list_add_tail(&p->p_next,&s->s_procQ);
-		
 		return FALSE;
 	}
-	else{
-		if(!list_empty(&semdFree_h->s_next)){
-			//semd non presente nell'ASL e semdFree non vuoto
-			semd_t* t = container_of(&semdFree_h->s_next, semd_t, s_next);
-			
-			//rimozione dalla semdFree e inserimento nell'ASL
-			list_del(&semdFree_h->s_next);
-			list_add(&t->s_next, &semd_h->s_next);
-			
-			//inizializzaione campi del nuovo semd
-			t->s_key = key;
-			p->p_semkey = key;
-			list_add_tail(&p->p_next,&t->s_procQ);
-        		//inizializzaione dei s_procQ in initASL()
-			return FALSE; 
-		}
-		else return TRUE;
+
+	if(list_empty(&semdFree_h)){
+		return TRUE;
 	}
 
+	s = container_of(semdFree_h.next, semd_t, s_next);
+	list_del(semdFree_h.next);
+	s->s_key = key;
+	INIT_LIST_HEAD(&s->s_next);
+	INIT_LIST_HEAD(&s->s_procQ);
+	insertProcQ(&s->s_procQ, p);
+	struct list_head * pos;
+	list_for_each(pos, &semd_h){
+		semd_t *temp = container_of(pos, semd_t, s_next);
+		if(temp->s_key < s->s_key){
+			p->p_semkey = key;
+			list_add(&s->s_next, &temp->s_next);
+			return FALSE;
+		}
+	}
+	p->p_semkey = key;
+	list_add(&s->s_next, &semd_h);
 	return FALSE;
 }
 
@@ -84,29 +86,31 @@ int insertBlocked(int *key, pcb_t *p){
 pcb_t* removeBlocked(int *key){
 	//ricerca semd nella ASL
 	semd_t* s = getSemd(key);
-
-	if(s != NULL){
-		if(!list_empty(&s->s_procQ)){
-			//semd presente nella ASL, rimozione del primo pcb nella 
-			//lista s_procQ
-			pcb_t *t = container_of(s->s_procQ.next, pcb_t, p_next);
-			list_del(s->s_procQ.next);
-		
-			//se il semd ha s_procQ vuota, allora ritorna il semd a 
-			//semdFree
-			if(list_empty(&s->s_procQ)){
-				
-				list_del(&s->s_next);
-
-				INIT_LIST_HEAD(&s->s_next);
-				s->s_key = 0;
-				INIT_LIST_HEAD(&s->s_procQ);
-				
-				list_add(&s->s_next, &semdFree_h->s_next);
-			}
-
-			return t;
+	
+	if(s == NULL){
+		return NULL;
+	}
+	
+	if(!list_empty(&s->s_procQ)){
+		//semd presente nella ASL, rimozione del primo pcb nella 
+		//lista s_procQ
+		pcb_t *t = container_of(s->s_procQ.next, pcb_t, p_next);
+		t->p_semkey = NULL;
+		list_del(s->s_procQ.next);
+	
+		//se il semd ha s_procQ vuota, allora ritorna il semd a 
+		//semdFree
+		if(emptyProcQ(&s->s_procQ)){
+			
+			list_del(&s->s_next);
+			INIT_LIST_HEAD(&s->s_next);
+			s->s_key = 0;
+			INIT_LIST_HEAD(&s->s_procQ);
+			
+			list_add(&s->s_next, &semdFree_h);
 		}
+
+		return t;
 	}
 
 	return NULL;
@@ -140,7 +144,7 @@ pcb_t* outBlocked(pcb_t *p){
 						s->s_key = 0;
 						INIT_LIST_HEAD(&s->s_procQ);
 						
-						list_add(&s->s_next, &semdFree_h->s_next);
+						list_add(&s->s_next, &semdFree_h);
 					}
 
 					return q;
@@ -202,7 +206,7 @@ void outChildBlocked(pcb_t *p){
 						s->s_key = 0;
 						INIT_LIST_HEAD(&s->s_procQ);
 
-						list_add(&s->s_next, &semdFree_h->s_next);
+						list_add(&s->s_next, &semdFree_h);
 					}
 					
 					//puntatore al figlio di p
@@ -239,12 +243,12 @@ void initASL(){
 	INIT_LIST_HEAD(&semdFree.s_procQ);
 
 	//sentinella
-	semdFree_h = container_of(&semdFree.s_next, semd_t, s_next);
+	INIT_LIST_HEAD(&semdFree_h);
 	
 	//aggiunta semd liberi alla semdFree
 	for(int i = 0; i < MAXPROC; i++){
 		semd_t* s = &semd_table[i];
-		list_add(&s->s_next, &semdFree_h->s_next);
+		list_add(&s->s_next, &semdFree_h);
 	}
 	
 	//inizializzazione ASL
@@ -253,5 +257,5 @@ void initASL(){
 	INIT_LIST_HEAD(&ASL.s_procQ);
 	
 	//sentinella
-	semd_h = container_of(&ASL.s_next, semd_t, s_next);
+	INIT_LIST_HEAD(&semd_h);
 }
