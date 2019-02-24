@@ -17,7 +17,7 @@ struct list_head semd_h;
  * la funzione ritorna NULL.*/
 semd_t* getSemd(int *key){
 	
-	if(!list_empty(&ASL.s_next) && key != 0){
+	if(!list_empty(&semd_h) && key != 0){
 		
 		struct list_head *pos;
 		
@@ -25,7 +25,7 @@ semd_t* getSemd(int *key){
 			
 			semd_t* s = container_of(pos, semd_t, s_next);
 			
-			if(*(s->s_key) == *(key)){
+			if(s->s_key == key){
 				return s;
 			}
 		}
@@ -46,34 +46,29 @@ int insertBlocked(int *key, pcb_t *p){
 	
 	semd_t* s = getSemd(key); 
 	
-	if(s != NULL){
+	if(s == NULL){
+		
+		if(list_empty(&semdFree_h)){
+			return TRUE;
+		}
+
+		s = container_of(semdFree_h.next, semd_t, s_next);
+		list_del(semdFree_h.next);
+		
+		s->s_key = key;
+		INIT_LIST_HEAD(&s->s_next);
+		INIT_LIST_HEAD(&s->s_procQ);
+		
 		insertProcQ(&s->s_procQ, p);
+		list_add(&s->s_next, &semd_h);
 		p->p_semkey = key;
 		return FALSE;
 	}
-
-	if(list_empty(&semdFree_h)){
-		return TRUE;
+	else{
+		p->p_semkey = key;
+		insertProcQ(&s->s_procQ, p);
+		return FALSE;
 	}
-
-	s = container_of(semdFree_h.next, semd_t, s_next);
-	list_del(semdFree_h.next);
-	s->s_key = key;
-	INIT_LIST_HEAD(&s->s_next);
-	INIT_LIST_HEAD(&s->s_procQ);
-	insertProcQ(&s->s_procQ, p);
-	struct list_head * pos;
-	list_for_each(pos, &semd_h){
-		semd_t *temp = container_of(pos, semd_t, s_next);
-		if(temp->s_key < s->s_key){
-			p->p_semkey = key;
-			list_add(&s->s_next, &temp->s_next);
-			return FALSE;
-		}
-	}
-	p->p_semkey = key;
-	list_add(&s->s_next, &semd_h);
-	return FALSE;
 }
 
 /*removeBlocked prende in input la chiave identificava di un semd, da cui
@@ -91,29 +86,22 @@ pcb_t* removeBlocked(int *key){
 		return NULL;
 	}
 	
-	if(!list_empty(&s->s_procQ)){
-		//semd presente nella ASL, rimozione del primo pcb nella 
-		//lista s_procQ
-		pcb_t *t = container_of(s->s_procQ.next, pcb_t, p_next);
-		t->p_semkey = NULL;
-		list_del(s->s_procQ.next);
 	
-		//se il semd ha s_procQ vuota, allora ritorna il semd a 
-		//semdFree
-		if(emptyProcQ(&s->s_procQ)){
+	//semd presente nella ASL, rimozione del primo pcb nella 
+	//lista s_procQ
+	pcb_t *t = container_of(s->s_procQ.next, pcb_t, p_next);
+	t->p_semkey = NULL;
+	list_del(s->s_procQ.next);
+	
+	//se il semd ha s_procQ vuota, allora ritorna il semd a 
+	//semdFree
+	if(emptyProcQ(&s->s_procQ)){
 			
-			list_del(&s->s_next);
-			INIT_LIST_HEAD(&s->s_next);
-			s->s_key = 0;
-			INIT_LIST_HEAD(&s->s_procQ);
-			
-			list_add(&s->s_next, &semdFree_h);
-		}
-
-		return t;
+		list_del(&s->s_next);	
+		list_add(&s->s_next, &semdFree_h);
 	}
 
-	return NULL;
+	return t;
 }
 
 /*la funzione prende in input un pcb da rimuovere da un semaforo. Si compie una
@@ -163,11 +151,8 @@ pcb_t* headBlocked(int *key){
 	//ricerca nella ASL
 	semd_t* s = getSemd(key);
 
-	if(s != NULL){
-		//controllo che la lista dei processi bloccati su s non sia vuota
-		if(!list_empty(&s->s_procQ)) 
-			return container_of(s->s_procQ.next, pcb_t, p_next);
-	}
+	if(s != NULL && !list_empty(&s->s_procQ)) 
+		return container_of(s->s_procQ.next, pcb_t, p_next);
 
 	return NULL;
 }
@@ -230,32 +215,11 @@ void outChildBlocked(pcb_t *p){
 /*funzione per inizializare la tabella dei semd, la lista dei semd liberi e la ASL.*/
 void initASL(){
 	
-	//inizializzazione semd_table
-	for(int i = 0; i < MAXPROC; i++){
-		INIT_LIST_HEAD(&semd_table[i].s_next);
-		semd_table[i].s_key = 0;
-		INIT_LIST_HEAD(&semd_table[i].s_procQ);
-	}
-	
-	//inizializzazione semdFree
-	INIT_LIST_HEAD(&semdFree.s_next);
-	semdFree.s_key = 0;
-	INIT_LIST_HEAD(&semdFree.s_procQ);
-
-	//sentinella
+	INIT_LIST_HEAD(&semd_h);
 	INIT_LIST_HEAD(&semdFree_h);
 	
-	//aggiunta semd liberi alla semdFree
 	for(int i = 0; i < MAXPROC; i++){
-		semd_t* s = &semd_table[i];
-		list_add(&s->s_next, &semdFree_h);
+		semd_t * s = &semd_table[i];
+		list_add(&s->s_next,&semdFree_h);
 	}
-	
-	//inizializzazione ASL
-	INIT_LIST_HEAD(&ASL.s_next);
-	ASL.s_key = 0;
-	INIT_LIST_HEAD(&ASL.s_procQ);
-	
-	//sentinella
-	INIT_LIST_HEAD(&semd_h);
 }
