@@ -5,14 +5,14 @@
 #include <types_rikaya.h>
 #include "pcb.h"
 
-pcb_t pcbFree_table[MAX_PROC];
+pcb_t pcbFree_table[MAXPROC];
 
 struct list_head pcbFree_h;
 
 void initPcbs(){
 	INIT_LIST_HEAD(&pcbFree_h); //inizializza i campi di una struttura già esistente
-	for(int i = 0; i<MAX_PROC; i++){
-		list_add_tail(&(pcbFree_table[i]->p_next), &pcbFree_h);
+	for(int i = 0; i < MAXPROC; i++){
+		list_add_tail(&(pcbFree_table[i].p_next), &pcbFree_h);
 	}
 }
 
@@ -22,17 +22,39 @@ void freePcb(pcb_t *p){
 
 pcb_t *allocPcb(){
 	if(!list_empty(&pcbFree_h)){
-	
+
+		LIST_HEAD(pcbFree_h);
+
 		pcb_t* punt;
 		//punt è l'indirizzo dell'elemento puntato dalla sentinella estratto da list_head.
-		punt = container_of(pcbFree_h.next, pcb_t, p_next);
+		punt = container_of(pcbFree_h.prev, pcb_t, p_next);
+		//rimuovo l'indirizzo dalla lista pcbFreeh che lo contiene
+		list_del(&(punt->p_next));
+
+		INIT_LIST_HEAD(&(punt->p_next));
 
 		punt->p_parent = NULL;
 		INIT_LIST_HEAD(&(punt->p_child));
 		INIT_LIST_HEAD(&(punt->p_sib));
-		INIT_LIST_HEAD(&(punt->p_next));
-		//IMPORTANTE, non ho trovato i campi del processor state (p_s) .
-		list_del(pcbFree_h.next);
+
+
+		//inizializzazione campi che costituiscono state_t p_s
+		punt->p_s.entry_hi = 0;
+		punt->p_s.cause = 0;
+		punt->p_s.status = 0;
+		punt->p_s.pc_epc = 0;
+
+		for(int i = 0; i < 29; i++){
+			punt->p_s.gpr[i] = 0;
+		}
+		punt->p_s.hi = 0;
+		punt->p_s.lo = 0;
+
+		punt->p_semkey = NULL;
+		punt->priority = 0;
+
+
+
 		return punt;
 	}
 
@@ -70,7 +92,7 @@ void insertProcQ(struct list_head* head, pcb_t* p){
 
 pcb_t* headProcQ(struct list_head* head){
 	if (!list_empty(head)){
-		return container_of(head->next,pcb_t,p_next);
+		return (container_of(head->next,pcb_t,p_next));
 	}
 
 	return NULL;
@@ -92,7 +114,7 @@ pcb_t* outProcQ(struct list_head* head, pcb_t *p){
 	pcb_t *temp;
 	list_for_each(pos, head){
 		temp = container_of(head, pcb_t, p_next);
-		if(temp->p_next == p->p_next){
+		if(temp  == p){
 			list_del(head->next);
 			return temp;
 		}

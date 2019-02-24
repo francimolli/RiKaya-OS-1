@@ -3,7 +3,7 @@
 #include <const.h>
 #include <stdio.h>
 
-semd_t semd_table[MAX_PROC];
+semd_t semd_table[MAXPROC];
 
 semd_t semdFree;
 semd_t* semdFree_h;
@@ -16,7 +16,7 @@ semd_t* semd_h;
  * la funzione ritorna NULL.*/
 semd_t* getSemd(int *key){
 	
-	if(!list_empty(&ASL.s_next) && key != NULL){
+	if(!list_empty(&ASL.s_next) && key != 0){
 		
 		struct list_head *pos;
 		
@@ -47,7 +47,7 @@ int insertBlocked(int *key, pcb_t *p){
 	
 	if(s != NULL){
 		//semd presente nell'ASL
-		*(p->p_semKey) = *(key);
+		p->p_semkey = key;
 		list_add_tail(&p->p_next,&s->s_procQ);
 		
 		return FALSE;
@@ -55,15 +55,15 @@ int insertBlocked(int *key, pcb_t *p){
 	else{
 		if(!list_empty(&semdFree_h->s_next)){
 			//semd non presente nell'ASL e semdFree non vuoto
-			semd_t* t = container_of(semdFree_h->next, semd_t, s_next);
+			semd_t* t = container_of(&semdFree_h->s_next, semd_t, s_next);
 			
 			//rimozione dalla semdFree e inserimento nell'ASL
 			list_del(&semdFree_h->s_next);
 			list_add(&t->s_next, &semd_h->s_next);
 			
 			//inizializzaione campi del nuovo semd
-			*(t->s_key) = *(key);
-			*(p->p_semKey) = *(key);
+			t->s_key = key;
+			p->p_semkey = key;
 			list_add_tail(&p->p_next,&t->s_procQ);
         		//inizializzaione dei s_procQ in initASL()
 			return FALSE; 
@@ -89,17 +89,20 @@ pcb_t* removeBlocked(int *key){
 		if(!list_empty(&s->s_procQ)){
 			//semd presente nella ASL, rimozione del primo pcb nella 
 			//lista s_procQ
-			pcb_t *t = container_of(s->s_procQ->next, pcb_t, p_next);
-			list_del(&s->s_procQ->next);
+			pcb_t *t = container_of(s->s_procQ.next, pcb_t, p_next);
+			list_del(s->s_procQ.next);
 		
 			//se il semd ha s_procQ vuota, allora ritorna il semd a 
 			//semdFree
 			if(list_empty(&s->s_procQ)){
-			/*sistemare campi di s come quando semdFree 
-			 * viene inizializzata ovvero guarda implementazione 
-			 * initASL()*/
+				
 				list_del(&s->s_next);
-				list_add(&s->s_next, semdFree_h);
+
+				INIT_LIST_HEAD(&s->s_next);
+				s->s_key = 0;
+				INIT_LIST_HEAD(&s->s_procQ);
+				
+				list_add(&s->s_next, &semdFree_h->s_next);
 			}
 
 			return t;
@@ -116,7 +119,7 @@ pcb_t* removeBlocked(int *key){
  * è rimosso dalla coda. In tutti gli altri casi si ritorna NULL.*/
 pcb_t* outBlocked(pcb_t *p){
 	//ricerca nella ASL
-	semd_t* s = getSemd(&p->p_semKey);
+	semd_t* s = getSemd(p->p_semkey);
 
 	if(s != NULL){
 		//semd trovato
@@ -127,14 +130,17 @@ pcb_t* outBlocked(pcb_t *p){
 			//ricerca nella coda dei processi bloccati su s
 			list_for_each(pos, &s->s_procQ){
 				pcb_t* q = container_of(pos, pcb_t, p_next);
-				if(*p == *q){
+				if(p == q){
 					list_del(&q->p_next);
 					if(list_empty(&s->s_procQ)){
-					/*sistemare campi di s come quando semdFree 
-			 		* viene inizializzata ovvero guarda implementazione 
-			 		* initASL()*/
+					
 						list_del(&s->s_next);
-						list_add(&s->s_next, semdFree_h);
+
+					        INIT_LIST_HEAD(&s->s_next);
+						s->s_key = 0;
+						INIT_LIST_HEAD(&s->s_procQ);
+						
+						list_add(&s->s_next, &semdFree_h->s_next);
 					}
 
 					return q;
@@ -151,12 +157,12 @@ pcb_t* outBlocked(pcb_t *p){
  * della lista s_procQ. In tutti gli altri casi la funzione ritorna NULL.*/
 pcb_t* headBlocked(int *key){
 	//ricerca nella ASL
-	semd_t* s = getSemd(&key);
+	semd_t* s = getSemd(key);
 
 	if(s != NULL){
 		//controllo che la lista dei processi bloccati su s non sia vuota
 		if(!list_empty(&s->s_procQ)) 
-			return container_of(s->s_procQ->next, pcb_t, p_next);
+			return container_of(s->s_procQ.next, pcb_t, p_next);
 	}
 
 	return NULL;
@@ -169,7 +175,7 @@ pcb_t* headBlocked(int *key){
  * propri figli.*/
 void outChildBlocked(pcb_t *p){
 	//ricerca nella ASL
-	semd_t* s = getSemd(&p->p_semKey);
+	semd_t* s = getSemd(p->p_semkey);
 
 	if(s != NULL){
 		//semd attivo
@@ -181,23 +187,26 @@ void outChildBlocked(pcb_t *p){
 				
 				pcb_t* q = container_of(pos, pcb_t, p_next);
 			
-				if(*p == *q){
+				if(p == q){
 					/*se p è in coda allora lo si scollega dalla lista
 					*dei processi in coda nel semd s*/		
-					list_del(&p->s_next);
+					list_del(&p->p_next);
 					
 					/*se il semd ha la coda dei processi vuoti viene restituito
 					*a semdFree*/
 					if(list_empty(&s->s_procQ)){
-					/*sistemare campi di s come quando semdFree 
-			 		* viene inizializzata ovvero guarda implementazione 
-			 		* initASL()*/
+					
 						list_del(&s->s_next);
-						list_add(&s->s_next, semdFree_h);
+						
+						INIT_LIST_HEAD(&s->s_next);
+						s->s_key = 0;
+						INIT_LIST_HEAD(&s->s_procQ);
+
+						list_add(&s->s_next, &semdFree_h->s_next);
 					}
 					
 					//puntatore al figlio di p
-					pcb_t* c = container_of(p->p_child->next, pcb_t, p_child);
+					pcb_t* c = container_of(p->p_child.next, pcb_t, p_child);
 					
 					struct list_head *it;
 					
@@ -218,31 +227,31 @@ void outChildBlocked(pcb_t *p){
 void initASL(){
 	
 	//inizializzazione semd_table
-	for(int i = 0; i < MAX_PROC; i++){
-		LIST_HEAD(semd_table[i]->s_next);
-		semd_table[i]->s_key = NULL;
-		LIST_HEAD(semd_table[i]->s_procQ);
+	for(int i = 0; i < MAXPROC; i++){
+		INIT_LIST_HEAD(&semd_table[i].s_next);
+		semd_table[i].s_key = 0;
+		INIT_LIST_HEAD(&semd_table[i].s_procQ);
 	}
 	
 	//inizializzazione semdFree
-	LIST_HEAD(semdFree->s_next);
-	semdFree->s_key = NULL;
-	LIST_HEAD(semdFree->s_procQ);
+	INIT_LIST_HEAD(&semdFree.s_next);
+	semdFree.s_key = 0;
+	INIT_LIST_HEAD(&semdFree.s_procQ);
 
 	//sentinella
-	semdFree_h = container_of(semdFree->s_next, semd_t, s_next);
+	semdFree_h = container_of(&semdFree.s_next, semd_t, s_next);
 	
 	//aggiunta semd liberi alla semdFree
-	for(int i = 0; i < MAX_PROC; i++){
-		semd_t* s = semd_table[i];
+	for(int i = 0; i < MAXPROC; i++){
+		semd_t* s = &semd_table[i];
 		list_add(&s->s_next, &semdFree_h->s_next);
 	}
 	
 	//inizializzazione ASL
-	LIST_HEAD(ASL->s_next);
-	ASL->s_key = NULL;
-	LIST_HEAD(ASL->s_procQ);
+	INIT_LIST_HEAD(&ASL.s_next);
+	ASL.s_key = 0;
+	INIT_LIST_HEAD(&ASL.s_procQ);
 	
 	//sentinella
-	semd_h = container_of(ASL->s_next, semd_t, s_next);
+	semd_h = container_of(&ASL.s_next, semd_t, s_next);
 }

@@ -11,7 +11,7 @@ void freePcb(pcb_t *p);
 pcb_t *allocPcb(void);
 
 /* PCB queue handling functions */
-void mkEmptyProcQ(struct list_head *head);
+pcb_t* mkEmptyProcQ(struct list_head *head);
 int emptyProcQ(struct list_head *head);
 void insertProcQ(struct list_head *head, pcb_t *p);
 pcb_t *headProcQ(struct list_head *head);
