@@ -1,4 +1,3 @@
-#include "types_rikaya.h"
 #include "const.h"
 #include "pcb.h"
 

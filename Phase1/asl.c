@@ -194,16 +194,11 @@ void outChildBlocked(pcb_t *p){
 					}
 					
 					//puntatore al figlio di p
-					//MM pcb_t* c = container_of(p->p_child.next, pcb_t, p_child); qui il campo a cui si sta facendo riferimento e' p_sib, non p_child
-                    //MM In ogni caso non va bene ottenere in anticipo rispetto al loop che segue il valore di c
 					pcb_t* c = container_of(p->p_child.next, pcb_t, p_sib);
 					
 					struct list_head *it;
 					
-					//MM list_for_each(it, &c->p_sib){ Non si puo' usare list_for_each con un elemento che non e' una sentinella, il comportamento
-                    //MM diventa poco definito quando la lista finisce
 					list_for_each(it, &p->p_child){
-                        //MM Meglio prendere qui il pcb da eliminare
 						c = container_of(it, pcb_t, p_sib);
 						//chiamata ricorsiva sul figlio
 						outChildBlocked(c);
