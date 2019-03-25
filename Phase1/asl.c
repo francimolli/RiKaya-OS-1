@@ -2,7 +2,6 @@
 #include "pcb.h"
 #include <listx.h>
 #include <const.h>
-#include <stdio.h>
 
 semd_t semd_table[MAXPROC];
 
@@ -195,16 +194,22 @@ void outChildBlocked(pcb_t *p){
 					}
 					
 					//puntatore al figlio di p
-					pcb_t* c = container_of(p->p_child.next, pcb_t, p_child);
+					//MM pcb_t* c = container_of(p->p_child.next, pcb_t, p_child); qui il campo a cui si sta facendo riferimento e' p_sib, non p_child
+                    //MM In ogni caso non va bene ottenere in anticipo rispetto al loop che segue il valore di c
+					pcb_t* c = container_of(p->p_child.next, pcb_t, p_sib);
 					
 					struct list_head *it;
 					
-					list_for_each(it, &c->p_sib){
+					//MM list_for_each(it, &c->p_sib){ Non si puo' usare list_for_each con un elemento che non e' una sentinella, il comportamento
+                    //MM diventa poco definito quando la lista finisce
+					list_for_each(it, &p->p_child){
+                        //MM Meglio prendere qui il pcb da eliminare
+						c = container_of(it, pcb_t, p_sib);
 						//chiamata ricorsiva sul figlio
 						outChildBlocked(c);
 						/*una volta arrivati ad una foglia, si esamina il
 						*fratello della foglia, se ce ne sono*/
-						c = container_of(it, pcb_t, p_sib);
+						//c = container_of(it, pcb_t, p_sib); 
 					}
 				}
 			}
