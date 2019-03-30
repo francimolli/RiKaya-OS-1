@@ -231,3 +231,12 @@ void test3()
     termprint("\n", 0);
     SYSCALL(SYS3, 0, 0, 0);
 }
+
+
+int main () {
+
+    initPcbs();
+	addokbuf("Initialized Process Control Blocks   \n");
+
+
+}
