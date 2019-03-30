@@ -4,6 +4,7 @@
 #include <umps/arch.h>
 
 #include "pcb.h"
+#include "utils.h"
 
 #define TRANSMITTED 5
 #define TRANSTATUS 2
@@ -232,11 +233,17 @@ void test3()
     SYSCALL(SYS3, 0, 0, 0);
 }
 
+pcb_t *proc[3];
 
 int main () {
 
     initPcbs();
 	addokbuf("Initialized Process Control Blocks   \n");
-
+    
+    
+    proc[0] = allocEinit ((memaddr)test1, 1);
+    proc[1] = allocEinit ((memaddr)test2, 2);
+    proc[2] = allocEinit ((memaddr)test3, 3);
+    addokbuf("PCB allocati");
 
 }

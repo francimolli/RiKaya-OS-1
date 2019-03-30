@@ -1,12 +1,11 @@
-#include "const.h"
 #include "pcb.h"
 
 pcb_t pcbFree_table[MAXPROC];
 struct list_head pcbFree_h; 		
 
 void initPcbs(void){
-	INIT_LIST_HEAD(&pcbFree_h); //inizializza i campi di una struttura già esistente
-	for(int i = 0; i < MAXPROC; i++){
+    INIT_LIST_HEAD(&pcbFree_h);
+    for(int i = 0; i < MAXPROC; i++){
 		list_add_tail(&(pcbFree_table[i].p_next), &pcbFree_h);
 	}
 }
