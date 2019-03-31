@@ -1,6 +1,6 @@
 #include "utils.h"
 
-pcb_t* allocEinit (const memaddr m, int priorityVal) {
+pcb_t* allocAndSet (const memaddr m, int priorityVal, unsigned int sMask) {
 
     pcb_t* p;
 
@@ -13,14 +13,17 @@ pcb_t* allocEinit (const memaddr m, int priorityVal) {
     
     
     //Interrupt abilitati
-    p->p_s.status |=  STATUS_IEc ;
+    //p->p_s.status |=  STATUS_IEc ;
     //Processo in Kernel Mode
-    p->p_s.status |= ~STATUS_VMc ;
+    //p->p_s.status |= ~STATUS_VMc ;
     //Virtual Memory OFF
-    p->p_s.status |= ~STATUS_KUc ;
+    //p->p_s.status |= ~STATUS_KUc ;
     //Processor Local Timer Abilitato
-    p->p_s.status |=  STATUS_TE ;
+    //p->p_s.status |=  STATUS_TE ;
     //Inizializzare SP
+    
+    p->p_s.status |= sMask;
+    
     //p->p_s.reg_sp = RAMTOP - FRAMESIZE * SPn ;
     SPn = SPn + 1 ;
     

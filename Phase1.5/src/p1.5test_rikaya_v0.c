@@ -235,15 +235,23 @@ void test3()
 
 pcb_t *proc[3];
 
+unsigned int makeMask () {
+
+    return STATUS_IEc | ~STATUS_VMc | ~STATUS_KUc | STATUS_TE ;
+
+}
+
 int main () {
 
     initPcbs();
 	addokbuf("Initialized Process Control Blocks   \n");
     
-    
-    proc[0] = allocEinit ((memaddr)test1, 1);
-    proc[1] = allocEinit ((memaddr)test2, 2);
-    proc[2] = allocEinit ((memaddr)test3, 3);
+    unsigned int mask = makeMask();
+
+    proc[0] = allocAndSet ((memaddr)test1, 1, mask);
+    proc[1] = allocAndSet ((memaddr)test2, 2, mask);
+    proc[2] = allocAndSet ((memaddr)test3, 3, mask);
     addokbuf("PCB allocati");
 
+    return 0;
 }

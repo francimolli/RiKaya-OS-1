@@ -4,7 +4,11 @@
 #include <types_rikaya.h>
 #include <const.h>
 
+pcb_t pcbFree_table[MAXPROC];
+struct list_head pcbFree_h;
+
 /* PCB handling functions */
+
 
 /* PCB free list handling functions */
 void initPcbs(void);

@@ -1,13 +1,9 @@
-#include "types_rikaya.h"
-#include "const.h"
 #include "pcb.h"
 
-pcb_t pcbFree_table[MAXPROC];
-struct list_head pcbFree_h; 		
 
 void initPcbs(void){
-	INIT_LIST_HEAD(&pcbFree_h); //inizializza i campi di una struttura già esistente
-	for(int i = 0; i < MAXPROC; i++){
+    INIT_LIST_HEAD(&pcbFree_h);
+    for(int i = 0; i < MAXPROC; i++){
 		list_add_tail(&(pcbFree_table[i].p_next), &pcbFree_h);
 	}
 }
@@ -17,35 +13,44 @@ void freePcb(pcb_t *p){
 }
 
 
+HIDDEN void setDefault (pcb_t* p) {
+    p->p_parent = NULL;
+    
+    p->p_s.entry_hi = 0;
+    p->p_s.cause = 0;
+    p->p_s.status = 0;
+    p->p_s.pc_epc = 0;
+       
+       
+    for(int i = 0;i<29;i++){
+        p->p_s.gpr[i] = 0;
+    }   
+    p->p_s.hi = 0;
+    p->p_s.lo = 0;
+    p->p_semkey = NULL;
+    p->priority = 0;
+
+    INIT_LIST_HEAD(&(p->p_next));
+    INIT_LIST_HEAD(&(p->p_child));
+    INIT_LIST_HEAD(&(p->p_sib));
+
+}
+
 pcb_t *allocPcb(void){
 
 	if (list_empty(&pcbFree_h)) return NULL;
 	
 	pcb_t *punt;
-	//punt è l'indirizzo dell'elemento puntato dalla sentinella estratto da list_head.
-	punt = container_of(pcbFree_h.prev, pcb_t, p_next);
+	//punt è l'indirizzo del primo elemento di tipo pcb nella coda dei processi
+    //e viene "estratto" tramite la sentinella
+	punt = container_of(pcbFree_h.next, pcb_t, p_next);
 					       
-	//rimuovo l'indirizzo dalla lista pcbFreeh che lo contiene
+	//rimuovo l'indirizzo dalla lista pcbFree che lo contiene
 	list_del(&(punt->p_next));
+    
+    //Inizializzo i campi del pcb al loro valore di default
+    setDefault(punt);
 
-	punt->p_parent = NULL;
-
-	punt->p_s.entry_hi = 0;
-	punt->p_s.cause = 0;
-	punt->p_s.status = 0;
-	punt->p_s.pc_epc = 0;
-	
-	
-	for(int i = 0;i<29;i++){
-		punt->p_s.gpr[i] = 0;
-	}	
-	punt->p_s.hi = 0;
-	punt->p_s.lo = 0;
-	punt->p_semkey = NULL;
-	punt->priority = 0;
-	INIT_LIST_HEAD(&(punt->p_next));
-	INIT_LIST_HEAD(&(punt->p_child));
-	INIT_LIST_HEAD(&(punt->p_sib));
 									    
 	return punt;
 }
