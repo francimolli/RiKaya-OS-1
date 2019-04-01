@@ -4,7 +4,7 @@
 #include <umps/arch.h>
 
 #include "pcb.h"
-#include "utils.h"
+#include "init.h"
 
 #define TRANSMITTED 5
 #define TRANSTATUS 2
