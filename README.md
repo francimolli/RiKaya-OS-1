@@ -1,2 +1,6 @@
 # RiKaya-OS
-OS for the "Sistemi Operativi" class. 
+
+* Giosuè Cotugno
+* Michele Gaspari
+* Stefano Faieta
+* Francesco Mollica
