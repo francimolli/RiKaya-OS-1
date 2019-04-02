@@ -7,9 +7,11 @@ pcb_t* allocAndSet (const memaddr m, int priorityVal, unsigned int sMask) {
     static int SPn = 1;
 
     p = allocPcb();
-
-    p->p_s.pc_epc = m;
-    p->priority = priorityVal;
+    
+    //set PC 
+    p->p_s.pc_epc = p->p_s.reg_t9 = m;
+    //set priority
+    p->priority = p->original_priority = priorityVal;
     
     
     //Interrupt abilitati
@@ -22,6 +24,8 @@ pcb_t* allocAndSet (const memaddr m, int priorityVal, unsigned int sMask) {
     //p->p_s.status |=  STATUS_TE ;
     //Inizializzare SP
     
+    //sMask è una maschera di status impostata come qui sopra ^
+
     p->p_s.status |= sMask;
     
     //p->p_s.reg_sp = RAMTOP - FRAMESIZE * SPn ;

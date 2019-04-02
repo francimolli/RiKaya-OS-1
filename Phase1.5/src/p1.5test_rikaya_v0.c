@@ -5,6 +5,7 @@
 
 #include "pcb.h"
 #include "init.h"
+#include "scheduler.h"
 
 #define TRANSMITTED 5
 #define TRANSTATUS 2
@@ -252,6 +253,13 @@ int main () {
     proc[1] = allocAndSet ((memaddr)test2, 2, mask);
     proc[2] = allocAndSet ((memaddr)test3, 3, mask);
     addokbuf("PCB allocati");
+    
+    struct list_head ready_queue_h;
+    pcb_t* tmpProc = mkEmptyProcQ (&ready_queue_h);
+
+    insertProcQ (&ready_queue_h, proc[0]);
+    insertProcQ (&ready_queue_h, proc[1]);
+    insertProcQ (&ready_queue_h, proc[2]);
 
     return 0;
 }

@@ -28,7 +28,7 @@ HIDDEN void setDefault (pcb_t* p) {
     p->p_s.hi = 0;
     p->p_s.lo = 0;
     p->p_semkey = NULL;
-    p->priority = 0;
+    p->priority = p->original_priority = 0;
 
     INIT_LIST_HEAD(&(p->p_next));
     INIT_LIST_HEAD(&(p->p_child));
@@ -60,7 +60,7 @@ pcb_t* mkEmptyProcQ(struct list_head* head){
 	
 	INIT_LIST_HEAD(head);
 	
-	return container_of(head, pcb_t, p_next);
+	return NULL;
 }
 
 //restituisco true se la lista puntata da head è vuota, false altrimenti.
