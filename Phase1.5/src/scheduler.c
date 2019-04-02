@@ -1,6 +1,6 @@
 #include "scheduler.h"
 
-
+extern void log_process_order(int process);
 
 /*
  * In questa fase, il sistema operativo entra nell'entry point (il main) 
