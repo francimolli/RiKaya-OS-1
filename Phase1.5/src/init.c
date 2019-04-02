@@ -1,5 +1,8 @@
 #include "init.h"
 
+
+//ricavo gli indirizzi relativi alle funzioni che si occuperanno, rispettivamente di gestire:
+//SystemCall&Breakpoint - TLB - Trap - Interrupt
 extern void sysbrHandler();
 extern void tlbHandler();
 extern void trapHandler();
@@ -9,6 +12,10 @@ extern void interruptHandler();
 #define trapHandlerAddress ((memaddr)trapHandler) 
 #define interruptHandlerAddress ((memaddr)interruptHandler)
 
+//funzione che alloca ed inizializza un PCB, prendendo come valori :
+//memaddr m : entry point della funzione che il processo dovrà eseguire
+//int priorityVal : priorità iniziale del processo
+//uint sMask : maschera di status
 pcb_t* allocAndSet (const memaddr m, int priorityVal, unsigned int sMask) {
 
     pcb_t* p;
@@ -45,6 +52,11 @@ pcb_t* allocAndSet (const memaddr m, int priorityVal, unsigned int sMask) {
 }
 
 #define defaultNewAreaMask 0 | ~STATUS_IEc | ~STATUS_VMc | ~STATUS_KUc | STATUS_TE
+//funzione che popola un'area, prende in input l'indirizzo dell'area da popolare
+//e l'indirizzo dell'handler che si occupa di gestire l'eccezione
+//inizializza inoltre lo status nel seguente modo:
+//-Interrupt e VM disabilitati - KernelMode ON - Timer abilitato
+//lo SP punta a RAMTOP
 HIDDEN void populateArea (state_t* areaAddress, memaddr handlerFun) {
     
     areaAddress->status = defaultNewAreaMask ; 
@@ -53,6 +65,7 @@ HIDDEN void populateArea (state_t* areaAddress, memaddr handlerFun) {
 
 }
 
+//funzione che popola le 4 New Areas
 void populateNewAreas () {
 
     populateArea ((state_t*)SYSBR_NEWAREA     , sysbrHandlerAddress); //SYS,BR
