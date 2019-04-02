@@ -3,7 +3,7 @@
 
 O.S. for the "Sistemi Operativi" course. 
 
--Francesco Mollica
--Giosuè Cotugno
--Michele Gaspari
--Stefano Faieta
+- Francesco Mollica
+- Giosuè Cotugno
+- Michele Gaspari
+- Stefano Faieta
