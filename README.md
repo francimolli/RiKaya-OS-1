@@ -1,6 +1,6 @@
 # RiKaya-OS
 
 * Giosuè Cotugno
-* Michele Gaspari
 * Stefano Faieta
+* Michele Gaspari
 * Francesco Mollica
