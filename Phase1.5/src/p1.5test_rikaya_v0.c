@@ -262,8 +262,6 @@ int main () {
     proc[2] = allocAndSet ((memaddr)test3, 3, mask);
     addokbuf("PCB allocati \n");
     
-    //creo la lista dei PCB che passerò successivamente allo scheduler
-    struct list_head ready_queue_h;
     pcb_t* tmpProc = mkEmptyProcQ (&ready_queue_h);
 
     //inserisco i 3 PCB precedentemente creati nella lista dei PCB

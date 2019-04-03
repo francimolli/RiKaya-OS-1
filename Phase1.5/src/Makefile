@@ -16,11 +16,12 @@ endif
 
 UMPS2_DATA_DIR = $(UMPS2_DIR_PREFIX)/share/umps2
 UMPS2_INCLUDE_DIR = $(UMPS2_DIR_PREFIX)/include/umps2
+PROJECT_DIR =  ../include
 
 # Compiler options
 CFLAGS_LANG = -ffreestanding
 CFLAGS_MIPS = -mips1 -mabi=32 -mno-gpopt -G 0 -mno-abicalls -fno-pic -mfp32
-CFLAGS = $(CFLAGS_LANG) $(CFLAGS_MIPS) -I$(UMPS2_INCLUDE_DIR) -Wall -O0 -std=gnu11
+CFLAGS = $(CFLAGS_LANG) $(CFLAGS_MIPS) -I$(UMPS2_INCLUDE_DIR) -I$(PROJECT_DIR) -Wall -O0 -std=gnu11
 
 # Linker options
 LDFLAGS = -G 0 -nostdlib -T $(UMPS2_DATA_DIR)/umpscore.ldscript

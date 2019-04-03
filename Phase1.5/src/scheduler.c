@@ -1,9 +1,10 @@
 #include "scheduler.h"
+#include <umps/libumps.h>
 
 extern void log_process_order(int process);
 
 /*
- * In questa fase, il sistema operativo entra nell'entry point (il main) 
+ * In questa fase, il sistema operativo entra nell'entry point (il main)
  * dove vengono inizializzate le varie strutture e dopodichè passa il testimone
  * allo scheduler che si occupa totalmente da quel momento in poi della gestione
  * dei processi. Per questa fase ipotizziamo che venga, fuori dallo scheduler (nel main)
@@ -18,7 +19,36 @@ extern void log_process_order(int process);
 
 //readyQueue_h = sentinella gestita dallo scheduler relativa alla coda dei processi pronti
 
-void scheduler (struct list_head* readyQueue_h) {
+void scheduler () {
+
+	//controllo se ci sono processi da eseguire
+	if(emptyProcQ(&ready_queue_h)){
+		HALT();
+	}
+
+	//controlliamo che il processore sia libero
+	if(curr_proc != NULL){
+		//se il proccessore non è libero si riporta la priorità del processo corrente
+		//a original_priority
+		curr_proc->priority = curr_proc->original_priority;
+		insertProcQ(&ready_queue_h, curr_proc);
+
+	}
+	curr_proc = removeProcQ(&ready_queue_h);
+	log_process_order(curr_proc->original_priority);
+	struct list_head* iter ;
+	list_for_each(iter,&ready_queue_h){
+		container_of(iter,pcb_t,p_next)->priority++;
+	}
+	LDST(&curr_proc->p_s);
+}
 
 
+
+void kill_proc(){
+	struct list_head* iter ;
+	list_for_each(iter,&ready_queue_h){
+		removeChild(container_of(iter,pcb_t,p_child));
+	}
+	curr_proc=NULL;
 }
