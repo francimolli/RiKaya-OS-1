@@ -20,6 +20,6 @@
 #define terminate_proc 3
 #define syscall 8
 #define breakpoint 9
-pcb_t* curr_proc = NULL;
+
 
 #endif

@@ -1,11 +1,5 @@
-#include "const.h"
-#include "listx.h"
-#include <umps/libumps.h>
-#include <umps/arch.h>
-
 #include "pcb.h"
-#include "init.h"
-#include "scheduler.h"
+#include <umps/libumps.h>
 
 #define TRANSMITTED 5
 #define TRANSTATUS 2
@@ -61,7 +55,7 @@ devreg termstat(memaddr *stataddr)
     return ((*stataddr) & STATUSMASK);
 }
 
-/* This function prints a string on specified terminal and returns TRUE if 
+/* This function prints a string on specified terminal and returns TRUE if
  * print was successful, FALSE if not   */
 unsigned int termprint(char *str, unsigned int term)
 {
@@ -232,42 +226,4 @@ void test3()
     termprint(gantt_diagram, 0);
     termprint("\n", 0);
     SYSCALL(SYS3, 0, 0, 0);
-}
-
-pcb_t *proc[3];
-
-unsigned int makeMask () {
-
-    return STATUS_IEc | ~STATUS_VMc | ~STATUS_KUc | STATUS_TE ;
-
-}
-
-int main () {
-    
-    //Popolo le New Areas nel ROM Reserved Frame
-    populateNewAreas();
-    addokbuf("NEW AREAS popolate \n");
-
-    //Istanzio la lista dei PCB
-    initPcbs();
-	addokbuf("Initialized Process Control Blocks   \n");
-    
-    //creo la maschera utilizzata per inizializzare il campo status dei processi
-    unsigned int mask = makeMask();
-    
-    //Alloco i 3 processi, inizializzando i PCB relativi ed assegnando
-    //ad ognuno di essi il puntatore all'area di memoria della loro funzione
-    proc[0] = allocAndSet ((memaddr)test1, 1, mask);
-    proc[1] = allocAndSet ((memaddr)test2, 2, mask);
-    proc[2] = allocAndSet ((memaddr)test3, 3, mask);
-    addokbuf("PCB allocati \n");
-    
-    pcb_t* tmpProc = mkEmptyProcQ (&ready_queue_h);
-
-    //inserisco i 3 PCB precedentemente creati nella lista dei PCB
-    insertProcQ (&ready_queue_h, proc[0]);
-    insertProcQ (&ready_queue_h, proc[1]);
-    insertProcQ (&ready_queue_h, proc[2]);
-
-    return 0;
 }

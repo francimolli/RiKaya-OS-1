@@ -9,7 +9,7 @@ extern void trapHandler();
 extern void interruptHandler();
 #define sysbrHandlerAddress ((memaddr)sysbrHandler)
 #define tlbHandlerAddress ((memaddr)tlbHandler)
-#define trapHandlerAddress ((memaddr)trapHandler) 
+#define trapHandlerAddress ((memaddr)trapHandler)
 #define interruptHandlerAddress ((memaddr)interruptHandler)
 
 //funzione che alloca ed inizializza un PCB, prendendo come valori :
@@ -23,13 +23,13 @@ pcb_t* allocAndSet (const memaddr m, int priorityVal, unsigned int sMask) {
     static int SPn = 1;
 
     p = allocPcb();
-    
-    //set PC 
+
+    //set PC
     p->p_s.pc_epc = p->p_s.reg_t9 = m;
     //set priority
     p->priority = p->original_priority = priorityVal;
-    
-    
+
+
     //Interrupt abilitati
     //p->p_s.status |=  STATUS_IEc ;
     //Processo in Kernel Mode
@@ -39,14 +39,14 @@ pcb_t* allocAndSet (const memaddr m, int priorityVal, unsigned int sMask) {
     //Processor Local Timer Abilitato
     //p->p_s.status |=  STATUS_TE ;
     //Inizializzare SP
-    
+
     //sMask è una maschera di status impostata come qui sopra ^
 
     p->p_s.status |= sMask;
-    
+
     p->p_s.reg_sp = RAMTOP - FRAMESIZE * SPn ;
     SPn = SPn + 1 ;
-    
+
     return p;
 
 }
@@ -58,8 +58,8 @@ pcb_t* allocAndSet (const memaddr m, int priorityVal, unsigned int sMask) {
 //-Interrupt e VM disabilitati - KernelMode ON - Timer abilitato
 //lo SP punta a RAMTOP
 HIDDEN void populateArea (state_t* areaAddress, memaddr handlerFun) {
-    
-    areaAddress->status = defaultNewAreaMask ; 
+
+    areaAddress->status = defaultNewAreaMask ;
     areaAddress->reg_sp = RAMTOP ;
     areaAddress->pc_epc = areaAddress->reg_t9 = handlerFun ;
 

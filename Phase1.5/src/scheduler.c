@@ -1,3 +1,4 @@
+#include "myconst.h"
 #include "scheduler.h"
 #include <umps/libumps.h>
 
@@ -46,9 +47,13 @@ void scheduler () {
 
 
 void kill_proc(){
-	struct list_head* iter ;
-	list_for_each(iter,&ready_queue_h){
-		removeChild(container_of(iter,pcb_t,p_child));
+		pcb_t* tmp=rec_proc_kill(&curr_proc);
+		curr_proc=NULL;
+}
+pcb_t* rec_proc_kill(pcb_t* tmp){
+	if (tmp==NULL){
+		return NULL;
+	}else{
+		return rec_proc_kill(outProcQ(&ready_queue_h,outChild(tmp)));
 	}
-	curr_proc=NULL;
 }

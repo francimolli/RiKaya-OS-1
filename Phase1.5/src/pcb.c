@@ -15,16 +15,16 @@ void freePcb(pcb_t *p){
 
 HIDDEN void setDefault (pcb_t* p) {
     p->p_parent = NULL;
-    
+
     p->p_s.entry_hi = 0;
     p->p_s.cause = 0;
     p->p_s.status = 0;
     p->p_s.pc_epc = 0;
-       
-       
+
+
     for(int i = 0;i<29;i++){
         p->p_s.gpr[i] = 0;
-    }   
+    }
     p->p_s.hi = 0;
     p->p_s.lo = 0;
     p->p_semkey = NULL;
@@ -39,27 +39,27 @@ HIDDEN void setDefault (pcb_t* p) {
 pcb_t *allocPcb(void){
 
 	if (list_empty(&pcbFree_h)) return NULL;
-	
+
 	pcb_t *punt;
 
 	//punt è l'indirizzo del primo elemento di tipo pcb nella coda dei processi
     //e viene "estratto" tramite la sentinella
 	punt = container_of(pcbFree_h.next, pcb_t, p_next);
-					       
-	//rimuovo il pcb dalla lista dei processi vuoti 
+
+	//rimuovo il pcb dalla lista dei processi vuoti
 	list_del(&(punt->p_next));
-    
+
     //Inizializzo i campi del pcb al loro valore di default
     setDefault(punt);
-									    
+
 	return punt;
 }
 
 //inizializza lista dei PCB inizializzando la sentinella.
 pcb_t* mkEmptyProcQ(struct list_head* head){
-	
+
 	INIT_LIST_HEAD(head);
-	
+
 	return NULL;
 }
 
