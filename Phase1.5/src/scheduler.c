@@ -48,6 +48,7 @@ void scheduler () {
 				container_of(iter,pcb_t,p_next)->priority++;}
 		}
 		
+		//carica lo stato del processo
 		LDST(&curr_proc->p_s);
 	}
 }
