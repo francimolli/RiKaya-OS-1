@@ -12,6 +12,7 @@
 
 #define UPROCMAX 3  /* number of usermode processes (not including master proc
 		       and system daemons */
+#define TIME_SLICE 3
 
 #define	HIDDEN static
 #define	TRUE 	1
