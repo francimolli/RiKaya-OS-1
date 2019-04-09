@@ -23,25 +23,30 @@ extern void log_process_order(int process);
 void scheduler () {
 
 	//controllo se ci sono processi da eseguire
-	if(emptyProcQ(&ready_queue_h)){
-		HALT();
-	}
+	
+	while(1){
+		if(emptyProcQ(&ready_queue_h)){
+			HALT();
+		}
 
-	//controlliamo che il processore sia libero
-	if(curr_proc != NULL){
-		//se il proccessore non è libero si riporta la priorità del processo corrente
-		//a original_priority
-		curr_proc->priority = curr_proc->original_priority;
-		insertProcQ(&ready_queue_h, curr_proc);
-
+		//controlliamo che il processore sia libero
+		if(curr_proc != NULL){
+			//se il proccessore non è libero si riporta la priorità del processo corrente
+			//a original_priority
+			curr_proc->priority = curr_proc->original_priority;
+			insertProcQ(&ready_queue_h, curr_proc);
+		}
+		curr_proc = removeProcQ(&ready_queue_h);
+		log_process_order(curr_proc->original_priority);
+		i
+		struct list_head* iter ;
+		list_for_each(iter,&ready_queue_h){
+			if(container_of(iter,pcb_t,p_next)->priority < curr_proc->priority){
+				container_of(iter,pcb_t,p_next)->priority++;}
+		}
+		
+		LDST(&curr_proc->p_s);
 	}
-	curr_proc = removeProcQ(&ready_queue_h);
-	log_process_order(curr_proc->original_priority);
-	struct list_head* iter ;
-	list_for_each(iter,&ready_queue_h){
-		container_of(iter,pcb_t,p_next)->priority++;
-	}
-	LDST(&curr_proc->p_s);
 }
 
 
