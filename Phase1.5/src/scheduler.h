@@ -5,7 +5,7 @@
 pcb_t* curr_proc;
 void scheduler();
 	//dichiariamo qui la ready_queue in modo che sia visibile dallo scheduler ma possa venir 		inizializzata dal main
-HIDDEN struct list_head ready_queue_h;
+struct list_head ready_queue_h;
 void kill_proc();
 pcb_t* rec_proc_kill(pcb_t* tmp);
 
