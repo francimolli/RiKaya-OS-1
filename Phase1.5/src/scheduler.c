@@ -34,11 +34,14 @@ void scheduler () {
 			//se il proccessore non è libero si riporta la priorità del processo corrente
 			//a original_priority
 			curr_proc->priority = curr_proc->original_priority;
+
 			insertProcQ(&ready_queue_h, curr_proc);
+			
+
 		}
 		curr_proc = removeProcQ(&ready_queue_h);
 		log_process_order(curr_proc->original_priority);
-		i
+
 		struct list_head* iter ;
 		list_for_each(iter,&ready_queue_h){
 			if(container_of(iter,pcb_t,p_next)->priority < curr_proc->priority){
