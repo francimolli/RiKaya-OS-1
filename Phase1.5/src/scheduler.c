@@ -23,7 +23,7 @@ extern void log_process_order(int process);
 void scheduler () {
 
 	//controllo se ci sono processi da eseguire
-	
+
 	while(1){
 		if(emptyProcQ(&ready_queue_h)){
 			HALT();
@@ -36,7 +36,7 @@ void scheduler () {
 			curr_proc->priority = curr_proc->original_priority;
 
 			insertProcQ(&ready_queue_h, curr_proc);
-			
+
 
 		}
 		curr_proc = removeProcQ(&ready_queue_h);
@@ -47,12 +47,15 @@ void scheduler () {
 			if(container_of(iter,pcb_t,p_next)->priority < curr_proc->priority){
 				container_of(iter,pcb_t,p_next)->priority++;}
 		}
-		
+
 		//carica lo stato del processo
 		LDST(&curr_proc->p_s);
 	}
 }
 
+void context(){
+	
+}
 
 
 void kill_proc(){

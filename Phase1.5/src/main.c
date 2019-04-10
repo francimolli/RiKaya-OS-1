@@ -6,11 +6,14 @@
 #include "pcb.h"
 #include "init.h"
 #include "scheduler.h"
+
 pcb_t *proc[3];
+
 extern void addokbuf(char *strp);
 extern void test1();
 extern void test2();
 extern void test3();
+
 unsigned int makeMask () {
 
     return STATUS_IEc | ~STATUS_VMc | ~STATUS_KUc | STATUS_TE ;
@@ -21,11 +24,11 @@ int main () {
 
     //Popolo le New Areas nel ROM Reserved Frame
     populateNewAreas();
-  addokbuf("NEW AREAS popolate \n");
+    addokbuf("NEW AREAS popolate \n");
 
     //Istanzio la lista dei PCB
     initPcbs();
-	addokbuf("Initialized Process Control Blocks   \n");
+	  addokbuf("Initialized Process Control Blocks   \n");
 
     //creo la maschera utilizzata per inizializzare il campo status dei processi
     unsigned int mask = makeMask();
@@ -43,14 +46,14 @@ int main () {
     insertProcQ (&ready_queue_h, proc[0]);
     insertProcQ (&ready_queue_h, proc[1]);
     insertProcQ (&ready_queue_h, proc[2]);
-    
+
     //salvataaggio delle priorità iniziali nel campo original_priority
     struct list_head* prior;
-	
+
     for_each(prior, &ready_queue_h){
 	igsi = container_of(prior, pcb_t, p_next);
 	igsi->original_priority = igsi->priority;
     }
-	
+
     return 0;
 }

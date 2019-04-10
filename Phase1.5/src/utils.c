@@ -12,3 +12,11 @@ inline void cpy_state(state_t* source, state_t* dest){
 	dest->hi=source->hi;
 	dest->lo=source->lo;
 }
+
+/*
+#define CAUSE_IP_MASK          0x0000ff00
+#define CAUSE_IP(line)         (1U << (8 + (line)))
+#define CAUSE_IP_BIT(line)     (8 + (line))
+
+*/
+//
