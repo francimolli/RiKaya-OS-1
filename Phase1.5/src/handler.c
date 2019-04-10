@@ -32,11 +32,13 @@ void tlbHandler() {
 }
 
 void interruptHandler() {
+	//funzione da rivedere , bisogna vedere bit a bit e non  trasformare in int il dato
 	cpy_state((state_t*) INTERRUPT_OLDAREA,&curr_proc->p_s);
 	//trovo l'id dell'interrupt e lo metto nella variabile int_id
 	int int_id= CAUSE_INTERRUPT(curr_proc->p_s.cause);
 	switch(int_id){
-		case
+		case 2:
+			scheduler();
 	}
 
 }

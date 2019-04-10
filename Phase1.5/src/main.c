@@ -46,14 +46,15 @@ int main () {
     insertProcQ (&ready_queue_h, proc[0]);
     insertProcQ (&ready_queue_h, proc[1]);
     insertProcQ (&ready_queue_h, proc[2]);
-
+    addokbuf("inserisco nella ready queue \n");
     //salvataaggio delle priorità iniziali nel campo original_priority
     struct list_head* prior;
 
-    for_each(prior, &ready_queue_h){
-	igsi = container_of(prior, pcb_t, p_next);
-	igsi->original_priority = igsi->priority;
-    }
+  /*  for_each(prior, &ready_queue_h){
+	     igsi = container_of(prior, pcb_t, p_next);
+	     igsi->original_priority = igsi->priority;
+    }*/
+    scheduler();
 
     return 0;
 }

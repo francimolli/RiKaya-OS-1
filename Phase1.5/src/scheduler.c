@@ -20,14 +20,12 @@ extern void log_process_order(int process);
 
 //readyQueue_h = sentinella gestita dallo scheduler relativa alla coda dei processi pronti
 
-void scheduler () {
+void  context() {
 
-	//controllo se ci sono processi da eseguire
 
-	while(1){
-		if(emptyProcQ(&ready_queue_h)){
-			HALT();
-		}
+
+
+
 
 		//controlliamo che il processore sia libero
 		if(curr_proc != NULL){
@@ -47,14 +45,20 @@ void scheduler () {
 			if(container_of(iter,pcb_t,p_next)->priority < curr_proc->priority){
 				container_of(iter,pcb_t,p_next)->priority++;}
 		}
-
+addokbuf("sono prima del load state\n");
 		//carica lo stato del processo
 		LDST(&curr_proc->p_s);
-	}
+		addokbuf("ho inserito nel load state\n");
 }
 
-void context(){
-	
+void  scheduler(){
+	//controllo se ci sono processi da eseguire
+	if(emptyProcQ(&ready_queue_h)){
+		HALT();
+	}
+	addokbuf("Passo l'halt \n");
+	context();
+	setTIMER(3000);
 }
 
 
