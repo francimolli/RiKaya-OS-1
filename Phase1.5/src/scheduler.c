@@ -2,8 +2,7 @@
 #include "scheduler.h"
 #include <umps/libumps.h>
 
-extern void log_process_order(int process);
-
+extern void addokbuf(char *strp);
 /*
  * In questa fase, il sistema operativo entra nell'entry point (il main)
  * dove vengono inizializzate le varie strutture e dopodichè passa il testimone
@@ -22,11 +21,6 @@ extern void log_process_order(int process);
 
 void  context() {
 
-
-
-
-
-
 		//controlliamo che il processore sia libero
 		if(curr_proc != NULL){
 			//se il proccessore non è libero si riporta la priorità del processo corrente
@@ -35,9 +29,9 @@ void  context() {
 
 			insertProcQ(&ready_queue_h, curr_proc);
 
-
 		}
 		curr_proc = removeProcQ(&ready_queue_h);
+
 		log_process_order(curr_proc->original_priority);
 
 		struct list_head* iter ;
@@ -45,10 +39,9 @@ void  context() {
 			if(container_of(iter,pcb_t,p_next)->priority < curr_proc->priority){
 				container_of(iter,pcb_t,p_next)->priority++;}
 		}
-addokbuf("sono prima del load state\n");
+    addokbuf("sono prima del load state\n");
 		//carica lo stato del processo
 		LDST(&curr_proc->p_s);
-		addokbuf("ho inserito nel load state\n");
 }
 
 void  scheduler(){
@@ -63,13 +56,15 @@ void  scheduler(){
 
 
 void kill_proc(){
-		pcb_t* tmp=rec_proc_kill(&curr_proc);
+		pcb_t* tmp = rec_proc_kill(curr_proc);
 		curr_proc=NULL;
 }
+
 pcb_t* rec_proc_kill(pcb_t* tmp){
 	if (tmp==NULL){
 		return NULL;
-	}else{
+	}
+	else{
 		return rec_proc_kill(outProcQ(&ready_queue_h,outChild(tmp)));
 	}
 }

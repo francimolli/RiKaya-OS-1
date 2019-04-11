@@ -7,6 +7,7 @@ extern void sysbrHandler();
 extern void tlbHandler();
 extern void trapHandler();
 extern void interruptHandler();
+
 #define sysbrHandlerAddress ((memaddr)sysbrHandler)
 #define tlbHandlerAddress ((memaddr)tlbHandler)
 #define trapHandlerAddress ((memaddr)trapHandler)
@@ -51,7 +52,7 @@ pcb_t* allocAndSet (const memaddr m, int priorityVal, unsigned int sMask) {
 
 }
 
-#define defaultNewAreaMask 0 | ~STATUS_IEc | ~STATUS_VMc | ~STATUS_KUc | STATUS_TE
+#define defaultNewAreaMask (((~STATUS_IEc & ~STATUS_VMc) | STATUS_KUc) | STATUS_TE)
 //funzione che popola un'area, prende in input l'indirizzo dell'area da popolare
 //e l'indirizzo dell'handler che si occupa di gestire l'eccezione
 //inizializza inoltre lo status nel seguente modo:
