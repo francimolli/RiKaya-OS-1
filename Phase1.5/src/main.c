@@ -15,8 +15,9 @@ extern void test2();
 extern void test3();
 
 unsigned int makeMask () {
-
-    return (((STATUS_IEc & ~STATUS_VMc) | STATUS_KUc) | STATUS_TE) ;
+ //unsigned int tmp =(KM_EN_MASK & VM_DIS_MASK & INT_DIS_MASK & ~TMR_EN_MASK );
+ //tmp |= CP0_EN_MASK;
+    return ((STATUS_IEc & STATUS_VMc & STATUS_KUc & ~STATUS_TE)| STATUS_CU0) ;
 
 }
 
@@ -43,7 +44,7 @@ int main () {
     pcb_t* tmpProc = mkEmptyProcQ (&ready_queue_h);
 
     //inserisco i 3 PCB precedentemente creati nella lista dei PCB
-    insertProcQ (&ready_queue_h, proc[0]);
+   insertProcQ (&ready_queue_h, proc[0]);
     insertProcQ (&ready_queue_h, proc[1]);
     insertProcQ (&ready_queue_h, proc[2]);
     addokbuf("inserisco nella ready queue \n");

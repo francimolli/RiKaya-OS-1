@@ -3,6 +3,7 @@
 #include <umps/libumps.h>
 
 extern void addokbuf(char *strp);
+extern void log_process_order(int process);
 /*
  * In questa fase, il sistema operativo entra nell'entry point (il main)
  * dove vengono inizializzate le varie strutture e dopodichè passa il testimone
@@ -28,10 +29,10 @@ void  context() {
 			curr_proc->priority = curr_proc->original_priority;
 
 			insertProcQ(&ready_queue_h, curr_proc);
-
+			addokbuf("reinserisco nella rq \n");
 		}
 		curr_proc = removeProcQ(&ready_queue_h);
-
+		addokbuf("ho un nuovo processo nel curr pruc \n");
 		log_process_order(curr_proc->original_priority);
 
 		struct list_head* iter ;
@@ -39,9 +40,9 @@ void  context() {
 			if(container_of(iter,pcb_t,p_next)->priority < curr_proc->priority){
 				container_of(iter,pcb_t,p_next)->priority++;}
 		}
-    addokbuf("sono prima del load state\n");
+
 		//carica lo stato del processo
-		LDST(&curr_proc->p_s);
+		LDST(&(curr_proc->p_s));
 }
 
 void  scheduler(){
@@ -49,15 +50,16 @@ void  scheduler(){
 	if(emptyProcQ(&ready_queue_h)){
 		HALT();
 	}
-	addokbuf("Passo l'halt \n");
+
 	context();
-	setTIMER(3000);
+
 }
 
 
 void kill_proc(){
 		pcb_t* tmp = rec_proc_kill(curr_proc);
 		curr_proc=NULL;
+		scheduler();
 }
 
 pcb_t* rec_proc_kill(pcb_t* tmp){
