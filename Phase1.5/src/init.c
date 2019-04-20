@@ -1,17 +1,12 @@
 #include "init.h"
 #include <umps/libumps.h>
 
-//ricavo gli indirizzi relativi alle funzioni che si occuperanno, rispettivamente di gestire:
-//SystemCall&Breakpoint - TLB - Trap - Interrupt
-extern void sysbrHandler();
-extern void tlbHandler();
-extern void trapHandler();
-extern void interruptHandler();
+/*ricavo l'indirizzo relativo alle funzione che si occupa di gestire:
+SystemCall&Breakpoint - TLB - Trap - Interrupt*/
 
-#define sysbrHandlerAddress ((memaddr)sysbrHandler)
-#define tlbHandlerAddress ((memaddr)tlbHandler)
-#define trapHandlerAddress ((memaddr)trapHandler)
-#define interruptHandlerAddress ((memaddr)interruptHandler)
+extern void Handler();
+
+#define HandlerAddress ((memaddr)Handler)
 
 //funzione che alloca ed inizializza un PCB, prendendo come valori :
 //memaddr m : entry point della funzione che il processo dovrà eseguire
@@ -74,9 +69,9 @@ HIDDEN void populateArea (state_t* areaAddress, memaddr handlerFun) {
 //funzione che popola le 4 New Areas
 void populateNewAreas () {
 
-    populateArea ((state_t*)SYSBR_NEWAREA     , sysbrHandlerAddress); //SYS,BR
-    populateArea ((state_t*)TLB_NEWAREA       , tlbHandlerAddress); //TLB
-    populateArea ((state_t*)INTERRUPT_NEWAREA , interruptHandlerAddress); //INTERRUPT
-    populateArea ((state_t*)PGMTRAP_NEWAREA   , trapHandlerAddress); //TRAP
+    populateArea ((state_t*)SYSBR_NEWAREA     , HandlerAddress); //SYS,BR
+    populateArea ((state_t*)TLB_NEWAREA       , HandlerAddress); //TLB
+    populateArea ((state_t*)INTERRUPT_NEWAREA , HandlerAddress); //INTERRUPT
+    populateArea ((state_t*)PGMTRAP_NEWAREA   , HandlerAddress); //TRAP
     setTIMER(3000);
 }
