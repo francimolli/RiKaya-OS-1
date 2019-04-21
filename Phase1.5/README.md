@@ -18,3 +18,8 @@ make
 ```
 Verrano così generati i file oggetto che saranno automaticamente  
 linkati fra loro.
+
+#### Nota per l'esecuzione
+Per avere una corretta esecuzione, è necessario disabilitare la  
+spunta *Exceptions* presente nella barra delle *Stop Mask*,  
+in fondo all'interfaccia grafica di μMPS2.  
