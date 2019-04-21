@@ -9,7 +9,7 @@ In questa fase sono state parzialmente implementate :
 ## Compilazione
 
 Per compilare i file sorgente in modo che possano essere  
-eseguiti dall'architettura emulata da *uMPS2*, bisogna  
+eseguiti dall'architettura emulata da *μMPS2*, bisogna  
 spostarsi all'interno della directory src e lanciare il  
 comando make :  
 ```
