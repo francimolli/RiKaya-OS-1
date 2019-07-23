@@ -11,22 +11,22 @@
 
 pcb_t *proc;
 
-extern void addokbuf(char *strp);
+extern void print(char *msg);
 extern void test();
 
 int main () {
 
     //Popolo le New Areas nel ROM Reserved Frame
     populateNewAreas();
-    addokbuf("NEW AREAS popolate\n");
+    //print("NEW AREAS popolate\n");
 
     //Istanzio la lista dei PCB
     initPcbs();
-    addokbuf("Process Control Blocks inizializzati\n");
+    //print("Process Control Blocks inizializzati\n");
 
     //Istanzio la lista dei semafori
     initASL();
-    addokbuf("ASL inizializzata\n");
+    //print("ASL inizializzata\n");
 
     //Inizializzo i semafori relativi ai devices e allo pseudo-clock
     for(int i = 0; i < MAX_DEVICES; i++)
@@ -36,7 +36,7 @@ int main () {
     puntatore all'area di memoria della sua funzione*/
     proc = allocAndSet ((memaddr)test, 1);
 
-    addokbuf("PCB funzione test allocato\n");
+    //print("PCB funzione test allocato\n");
 
     mkEmptyProcQ (&ready_queue_h);
 
@@ -44,7 +44,7 @@ int main () {
     insertProcQ (&ready_queue_h, proc);
     //salvataggio delle priorità iniziali nel campo original_priority
 
-    addokbuf("Inizio esecuzione\n");
+    //print("Inizio esecuzione\n");
 
     //inizio esecuzione
     scheduler();

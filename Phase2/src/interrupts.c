@@ -6,8 +6,8 @@ void Interrupt_Handler(){
   ciascun bit del campo IP del registro CAUSE. Si utilizza la macro CAUSE_IP_GET
   per verificare se l'i-esimo bit di IP vale 1.*/
 
-  devreg_t *dev;//puntatore al registro del device che ha sollevato l'interrupt (può essere dtpreg_t/termreg_t)
-
+  dtpreg_t *dev;//puntatore al registro del device che ha sollevato l'interrupt (può essere dtpreg_t/termreg_t)
+  termreg_t *term;
 
   //Interrupt Processor Local Timer
   if(CAUSE_IP_GET(curr_proc->p_s.cause, INT_T_SLICE)){
@@ -51,7 +51,7 @@ void Interrupt_Handler(){
           tape, network, printer.*/
 
           dev = (dtpreg_t *) (DEV_REGS_START + (i * 4) + (j - 3) * DEV_PER_INT * 4);
-          dev_status = (int *)dev;
+          dev_status = (U32 *) dev->status;
 
           /*il processo corrente richiede un'operazione di I/O su questo device con la syscall
           Do_IO, perciò esso deve essere bloccato fino a quando l'operazione di I/O non è terminata
@@ -66,7 +66,7 @@ void Interrupt_Handler(){
           if(semDevices[(j - 3) * DEV_PER_INT + i] < 0){
             woken_proc = removeBlocked(&semDevices[(j - 3) * DEV_PER_INT + i]);
             semDevices[(j - 3) * DEV_PER_INT + i]++;
-            woken_proc->p_s.reg_v0 = (dtpreg_t *)dev->status;
+            woken_proc->p_s.reg_v0 = dev->status;
             insertProcQ(&ready_queue_h, woken_proc);
           }
 
@@ -79,7 +79,7 @@ void Interrupt_Handler(){
           if(semDevices[(j - 3) * DEV_PER_INT + i] < 0){
             woken_proc = removeBlocked(&semDevices[(j - 3) * DEV_PER_INT + i]);
             semDevices[(j - 3) * DEV_PER_INT + i]++;
-            IO_request(woken_proc->command, dev, 0);
+            IO_request(woken_proc->command, (U32 *) dev, 0);
           }
         }
       }
@@ -97,8 +97,7 @@ void Interrupt_Handler(){
           /*Come fatto per i device disk, tape, network e printer, si ottiene
           l'indirizzo base da cui inizia l'area di memoria dedicata al terminale i.*/
 
-          dev = (termreg_t *) (DEV_REGS_START + (i * 4) + 4 * DEV_PER_INT * 4);
-          dev_status = (int *)dev;
+          term = (termreg_t *) (DEV_REGS_START + (i * 4) + 4 * DEV_PER_INT * 4);
 
           /*ottenuto l'indirizzo base è necessario distinguere se l'interrupt sia stato sollevato dal
           sub-device in ricezione o trasmissione, o entrambi (se l'interrupt è stato causato da entrambi,
@@ -110,51 +109,54 @@ void Interrupt_Handler(){
           Dunque si legge lo status byte facendo un & bitwise con la statusmask, 0xFF presente nel file const_rikaya.*/
 
           if(semDevices[4*DEV_PER_INT + i] < 0 &&
-             (dev->recv_status & STATUSMASK) == DEV_TRCV_S_CHARRECV &&
-             (dev->transm_status & STATUSMASK) == DEV_TTRS_S_CHARTRSM){
+             (term->recv_status & STATUSMASK) == DEV_TRCV_S_CHARRECV &&
+             (term->transm_status & STATUSMASK) == DEV_TTRS_S_CHARTRSM){
 
+               dev_status = (U32 *) term->recv_status;
                //caso in cui il terminale i ha sollevato un interrupt sia per ricezione che per trasmissione
-               woken_proc = removeBlocked(&semDevices[4*DEV_PER_INT + i]);
-               semDevices[4*DEV_PER_INT + i]++;
-               woken_proc->p_s.reg_v0 = dev->recv_status; //indifferente che sia recv_status o transm_status
+               woken_proc = removeBlocked(&semDevices[4 * DEV_PER_INT + i]);
+               semDevices[4 * DEV_PER_INT + i]++;
+               woken_proc->p_s.reg_v0 = term->recv_status; //indifferente che sia recv_status o transm_status
                insertProcQ(&ready_queue_h, woken_proc);
 
-               dev->recv_command = DEV_C_ACK;
-               dev->transm_command = DEV_C_ACK;
+               term->recv_command = DEV_C_ACK;
+               term->transm_command = DEV_C_ACK;
 
-               while((dev->recv_status & STATUSMASK) != DEV_S_READY || (dev->transm_status & STATUSMASK) != DEV_S_READY)
+               while((term->recv_status & STATUSMASK) != DEV_S_READY || (term->transm_status & STATUSMASK) != DEV_S_READY)
                 ;
           }
 
           if(semDevices[4*DEV_PER_INT + i] < 0 &&
-             (dev->recv_status & STATUSMASK) == DEV_TRCV_S_CHARRECV &&
-             (dev->transm_status & STATUSMASK) == DEV_S_READY){
+             (term->recv_status & STATUSMASK) == DEV_TRCV_S_CHARRECV &&
+             (term->transm_status & STATUSMASK) == DEV_S_READY){
 
+                dev_status = (U32 *) term->recv_status;
                 //caso in cui il terminale i ha sollevato un interrupt solo per la ricezione
                 woken_proc = removeBlocked(&semDevices[4*DEV_PER_INT + i]);
                 semDevices[4*DEV_PER_INT + i]++;
-                woken_proc->p_s.reg_v0 = dev->recv_status;
+                woken_proc->p_s.reg_v0 = term->recv_status;
                 insertProcQ(&ready_queue_h, woken_proc);
 
-                dev->recv_command = DEV_C_ACK;
+                term->recv_command = DEV_C_ACK;
 
-                while((dev->recv_status & STATUSMASK) != DEV_S_READY)
+                while((term->recv_status & STATUSMASK) != DEV_S_READY)
                   ;
           }
 
           if(semDevices[4*DEV_PER_INT + i] < 0 &&
-             (dev->transm_status & STATUSMASK) == DEV_TTRS_S_CHARTRSM &&
-             (dev->recv_status & STATUSMASK) == DEV_S_READY){
+             (term->transm_status & STATUSMASK) == DEV_TTRS_S_CHARTRSM &&
+             (term->recv_status & STATUSMASK) == DEV_S_READY){
 
+                dev_status = (U32 *) term->transm_status;
                 //caso in cui il terminale i ha sollevato un interrupt solo per la ricezione
                 woken_proc = removeBlocked(&semDevices[4*DEV_PER_INT + i]);
                 semDevices[4*DEV_PER_INT + i]++;
-                woken_proc->p_s.reg_v0 = dev->transm_status;
+                woken_proc->p_s.reg_v0 = term->transm_status;
                 insertProcQ(&ready_queue_h, woken_proc);
 
-                dev->transm_command = DEV_C_ACK;
+                term->transm_command = DEV_C_ACK;
 
-                while((dev->transm_status & STATUSMASK) != DEV_S_READY)
+                while((term->transm_status & STATUSMASK) != DEV_S_READY)
                   ;
           }
 
@@ -165,9 +167,9 @@ void Interrupt_Handler(){
             woken_proc = removeBlocked(&semDevices[4*DEV_PER_INT + i]);
             semDevices[4*DEV_PER_INT + i]++;
             if(woken_proc->recv_or_transm)
-              IO_request(woken_proc->command, dev, TRUE);
+              IO_request(woken_proc->command,(U32 *) term, TRUE);
             else
-              IO_request(woken_proc->command, dev, FALSE);
+              IO_request(woken_proc->command,(U32 *) term, FALSE);
           }
         }
     }
@@ -196,12 +198,12 @@ int getDevice(int line_no, int dev_no){
   return 0;
 }
 
-void IO_request(U32 command, U32 *register, U32 term_command){
+void IO_request(U32 command, U32 *reg, U32 term_command){
 
   int *semaddr;
   /*offset per ottenere il semaforo associato al device del registro register (4 è il numero di campi
   che compongono un area di memoria dedicata ad un device)*/
-  U32 sem = (register - DEV_REGS_START)/4;
+  U32 sem = (((memaddr)reg) - DEV_REGS_START)/4;
 
   semaddr = &semDevices[sem];
 
@@ -222,25 +224,25 @@ void IO_request(U32 command, U32 *register, U32 term_command){
 
       /*il parametro command è da scrivere nel campo TRANSM_COMMAND, ovvero si tratta
       di un'operazione di trasmissione su un terminale*/
-      ((termreg_t *)register)->transm_command = command;
+      ((termreg_t *)reg)->transm_command = command;
     }
     else{
       /*il parametro command è da scrivere nel campo RECV_COMMAND, ovvero si tratta
       di un'operazione di ricezione su un terminale*/
-      ((termreg_t *)register)->recv_command = command;
+      ((termreg_t *)reg)->recv_command = command;
     }
 
   }
   else{
 
     //l'handshake inizia con la scrittura di un command code all'interno del campo command del registro
-    ((dtpreg_t *)register)->command = command;
+    ((dtpreg_t *)reg)->command = command;
   }
 
   if(woken_proc == curr_proc)
     Passeren(semaddr);
   else{
-    *semaddr--;
+    (*semaddr)--;
     insertBlocked(semaddr, woken_proc);
     outProcQ(&ready_queue_h, woken_proc);
   }

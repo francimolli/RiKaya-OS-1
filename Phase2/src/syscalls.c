@@ -3,11 +3,11 @@
 void Get_CPU_Time(U32 *user, U32 *kernel, U32 *wallclock){
 	/*aggiorno valori del tempo d'esecuzione (lo user_time non necessita di essere aggiornato
 	in quanto non è cambiato durante l'esecuzione della syscall)*/
-	curr_proc->p_s.kernel_time_old = getTODLO() - curr_proc->p_s.kernel_time_new;
+	curr_proc->kernel_time_old = getTODLO() - curr_proc->kernel_time_new;
 
-	*user = curr_proc->p_s.user_time_old;
-	*kernel = curr_proc->p_s.kernel_time_old;
-	*wallclock = getTODLO() - curr_proc->p_s.wallclock_time;
+	*user = curr_proc->user_time_old;
+	*kernel = curr_proc->kernel_time_old;
+	*wallclock = getTODLO() - curr_proc->wallclock_time;
 }
 
 int Create_Process(state_t *statep, int priority, void **cpid){
@@ -35,7 +35,7 @@ int Create_Process(state_t *statep, int priority, void **cpid){
 
 		//a questo punto la chiamata ha successo, se cpid != NULL dunque cpid contiene l'indirizzo di child_proc
 		if(cpid != NULL)
-			*((pcb_t *) cpid) = child_proc;
+			*cpid = child_proc;
 
 
 
@@ -95,7 +95,7 @@ int Terminate_Process(void **pid){
 		/*caso in cui pid punta ad un processo che non è quello corrente:
 		il processo da terminare deve essere discendente del processo corrente*/
 
-		pcb_t *q = *((pcb_t *)pid);
+		pcb_t *q = *pid;
 		if(lookup_proc(curr_proc, q)){
 
 			pcb_t *tmp = q->p_parent;
@@ -137,7 +137,7 @@ void Verhogen(int *semaddr){
 	se il descrittore del semaforo è presente nella ASL allora il processo che viene rimosso
 	dalla coda dei processi bloccati deve essere risvegliato e messo nella ready_queue_h*/
 	pcb_t *p = removeBlocked(semaddr);
-	*semaddr++;
+	(*semaddr)++;
 
 	if(*semaddr <= 0){
 		if(p != NULL){
@@ -153,7 +153,7 @@ void Passeren(int *semaddr){
 	se il descrittore del semaforo è presente nella ASL allora il processo che viene bloccato
 	su quel semaforo, il processo corrente, viene tolto dal processore per
 	essere inserito nella lista di processi bloccati sul semaforo indicato da semaddr*/
-	*semaddr--;
+	(*semaddr)--;
 
 	if(*semaddr < 0){
 		if(insertBlocked(semaddr, curr_proc) == FALSE){
@@ -174,17 +174,17 @@ void Wait_Clock(){
 
 	if(semDevices[CLOCK_SEM] == 0)//siginifica che il semaforo è vuoto, ovvero nessuno ha richiesto la Wait_Clock
 		SET_IT(100);
-	Passeren(&semDevices[CLOCK_SEM], curr_proc);
+	Passeren(&semDevices[CLOCK_SEM]);
 
 }
 
-int Do_IO(U32 command, U32 *register, U32 term_command){
+int Do_IO(U32 command, U32 *reg, U32 term_command){
 
 	curr_proc->command = command;
 	curr_proc->recv_or_transm = term_command;
 	woken_proc = curr_proc;
-	IO_request(command, register, term_command);
-	return *dev_status->status;
+	IO_request(command, reg, term_command);
+	return *dev_status;
 }
 
 void Set_Tutor(){
@@ -249,8 +249,8 @@ void Get_pid_ppid(void **pid, void **ppid){
 	/*assegna l'identificativo del curr_proc a *pid (se pid != NULL),
 	e l'identificativo del processo genitore a *ppid (se ppid != NULL)*/
 	if(pid != NULL)
-		*((pcb_t *) pid) = curr_proc;
+		*pid = curr_proc;
 
 	if(ppid != NULL)
-		*((pcb_t *) ppid) = curr_proc->p_parent;
+		*ppid = curr_proc->p_parent;
 }

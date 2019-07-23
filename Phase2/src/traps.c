@@ -5,9 +5,9 @@ void SysBpTrapHandler(){
     if(curr_proc->oldSYSBP == NULL || curr_proc->newSYSBP == NULL){
 
       //non c'è un puntatore ad un gestore di livello superiore, e quindi il processo va terminato
-      void **pid;
+      pcb_t **pid;
       pid = &curr_proc;
-      Terminate_Process(pid);
+      Terminate_Process((void **) pid);
 
       curr_proc = NULL;
 
@@ -27,9 +27,9 @@ void TlbTrapHandler(){
   if(curr_proc->oldTLB == NULL || curr_proc->newTLB == NULL){
 
     //non c'è un puntatore ad un gestore di livello superiore, e quindi il processo va terminato
-    void **pid;
+    pcb_t **pid;
     pid = &curr_proc;
-    Terminate_Process(pid);
+    Terminate_Process((void **) pid);
 
     curr_proc = NULL;
 
@@ -49,9 +49,9 @@ void PgmTrapHandler(){
   if(curr_proc->oldPGT == NULL || curr_proc->newPGT == NULL){
 
     //non c'è un puntatore ad un gestore di livello superiore, e quindi il processo va terminato
-    void **pid;
+    pcb_t **pid;
     pid = &curr_proc;
-    Terminate_Process(pid);
+    Terminate_Process((void **) pid);
 
     curr_proc = NULL;
 
