@@ -32,7 +32,7 @@ typedef int S32;
    #define YET_ANOTHER_DAEMON_ASID UPROCMAX + 2
 	 etc. */
 
-/* Addresses for new and old areas (where new and old processor states are 
+/* Addresses for new and old areas (where new and old processor states are
    stored on exceptions) */
 #define INT_NEWAREA 0x2000008c
 #define INT_OLDAREA 0x20000000
@@ -116,7 +116,7 @@ typedef int S32;
 #define DEV_PRNT_C_PRINTCHR 2   /* printer */
 
 #define DEV_TRCV_C_RECVCHAR 2   /* terminal */
-#define DEV_TTRS_C_TRSMCHAR 2   
+#define DEV_TTRS_C_TRSMCHAR 2
 
 #define DEV_S_READY   1   /* status common to all devices */
 
@@ -168,7 +168,7 @@ typedef int S32;
 
 /* Utility definitions for the status register: OR the register with these
    to set a specific bit, AND with the opposite to unset a specific bit.
-	 For example, to set STATUS_VMc, do status = status | STATUS_VMc;  to unset 
+	 For example, to set STATUS_VMc, do status = status | STATUS_VMc;  to unset
 	 it do status = status & ~STATUS_VMc */
 #define STATUS_IEc 0x00000001
 #define STATUS_KUc 0x00000002
@@ -339,10 +339,19 @@ typedef int S32;
 #define SYSBK_OLDAREA_INDEX 6
 #define SYSBK_NEWAREA_INDEX 7
 
+#define WS        WORD_SIZE
+#define DEV_REG_SIZE_W   4
+#define DEV_REG_SIZE     (DEV_REG_SIZE_W * WS)
+
 #define DEV_ADDRESS(LINENO, DEVNO)	DEV_REGS_START+((LINENO-3)*DEV_REG_SIZE) + (DEVNO*DEV_REGBLOCK_SIZE)
 
 /* funzione per ottenere il bitmap corrente della linea di interrupt */
 #define INTR_CURRENT_BITMAP(LINENO)	 (U32 *)(PENDING_BITMAP_START + (WORD_SIZE * (LINENO - 3)))
+
+#define DISK_START DEV_ADDRESS(INT_DISK - INT_LOWEST, 0)
+#define TAPE_START DEV_ADDRESS(INT_TAPE - INT_LOWEST, 0)
+#define NETWORK_START DEV_ADDRESS(INT_UNUSED - INT_LOWEST, 0)
+#define PRINTER_START DEV_ADDRESS(INT_PRINTER - INT_LOWEST, 0)
 
 
 #endif

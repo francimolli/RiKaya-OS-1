@@ -27,7 +27,7 @@ void populateNewAreas () {
 
     populateArea ((state_t*)SYSBK_NEWAREA     , HandlerAddress); //SYS,BR
     populateArea ((state_t*)TLB_NEWAREA       , HandlerAddress); //TLB
-    populateArea ((state_t*)INT_NEWAREA ,       HandlerAddress); //INTERRUPT
+    populateArea ((state_t*)INT_NEWAREA       , HandlerAddress); //INTERRUPT
     populateArea ((state_t*)PGMTRAP_NEWAREA   , HandlerAddress); //TRAP
 }
 
@@ -55,4 +55,24 @@ pcb_t* allocAndSet (const memaddr m, int priorityVal) {
     p->p_s.reg_sp = RAMTOP - (FRAME_SIZE * priorityVal) ;
 
     return p;
+}
+
+void initSemDevices(){
+
+  for(int i = 0; i < MAX_DEVICES; i++)
+    semDev[i] = 1;
+
+  for(int i = 0; i < DEV_PER_INT; i++){
+
+   semDevices.disk[i].s_key = &semDev[i];
+
+   semDevices.tape[i].s_key = &semDev[i + DEV_PER_INT];
+
+   semDevices.network[i].s_key = &semDev[i + 2 * DEV_PER_INT];
+
+   semDevices.terminalR[i].s_key = &semDev[i + 3 * DEV_PER_INT];
+
+   semDevices.terminalT[i].s_key = &semDev[i + 4 * DEV_PER_INT];
+  }
+  semDevices.pseudoclock.s_key = &semDev[CLOCK_SEM];
 }

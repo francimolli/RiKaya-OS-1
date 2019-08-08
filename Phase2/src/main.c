@@ -8,43 +8,46 @@
 #include "scheduler.h"
 #include "syscalls.h"
 #include "interrupts.h"
+#include "handler.h"
 
-pcb_t *proc;
-
-extern void print(char *msg);
 extern void test();
 
 int main () {
 
+    pcb_t *proc;
+    
     //Popolo le New Areas nel ROM Reserved Frame
     populateNewAreas();
-    //print("NEW AREAS popolate\n");
 
     //Istanzio la lista dei PCB
     initPcbs();
-    //print("Process Control Blocks inizializzati\n");
 
     //Istanzio la lista dei semafori
     initASL();
-    //print("ASL inizializzata\n");
 
     //Inizializzo i semafori relativi ai devices e allo pseudo-clock
-    for(int i = 0; i < MAX_DEVICES; i++)
-	   semDevices[i] = 0;
+    initSemDevices();
+
+    //Inizializzo puntatore a INT_OLDAREA per il caso in cui il processore sia in Wait
+    old_area = NULL;
+
+    //Inizializzo il puntatore al processo corrente
+    curr_proc = NULL;
+
+    //Inizializzo il contatore di processi bloccati
+    ProcBlocked = 0;
 
     /*Alloco il processo di test, inizializzando il PCB relativo ed assegnandoli
     puntatore all'area di memoria della sua funzione*/
     proc = allocAndSet ((memaddr)test, 1);
 
-    //print("PCB funzione test allocato\n");
+    //il processo iniziale deve sempre essere il tutor per i processi orfani
+    proc->tutor = TRUE;
 
     mkEmptyProcQ (&ready_queue_h);
 
-    //inserisco i 3 PCB precedentemente creati nella lista dei PCB
+    //inserisco il PCB con l'indirizzo della funzione di test nella lista dei PCB
     insertProcQ (&ready_queue_h, proc);
-    //salvataggio delle priorità iniziali nel campo original_priority
-
-    //print("Inizio esecuzione\n");
 
     //inizio esecuzione
     scheduler();

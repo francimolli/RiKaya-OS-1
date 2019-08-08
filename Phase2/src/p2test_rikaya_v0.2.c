@@ -133,11 +133,17 @@ void print(char *msg) {
 
 		/*		PANIC(); */
 
-		if ((status & TERMSTATMASK) != TRANSM)
+		if ((status & TERMSTATMASK) != TRANSM){
+			//addokbuf("Panic\n");
 			PANIC();
+		}
 
-		if (((status & TERMCHARMASK) >> BYTELEN) != *s)
+
+		if (((status & TERMCHARMASK) >> BYTELEN) != *s){
+			//addokbuf("PaniC\n");
 			PANIC();
+		}
+
 
 		s++;
 	}
@@ -150,7 +156,7 @@ void print(char *msg) {
 /*                 p1 -- the root process                            */
 /*                                                                   */
 void test() {
-	
+
 	SYSCALL(VERHOGEN, (int)&testsem, 0, 0);					/* V(testsem)   */
 
 	if (testsem != 1) { print("error: p1 v(testsem) with no effects\n"); PANIC(); }

@@ -3,6 +3,7 @@
 
 #include <umps/types.h>
 #include <listx.h>
+#include "const_rikaya.h"
 
 typedef unsigned int memaddr;
 
@@ -34,8 +35,7 @@ typedef struct pcb_t {
 	int 				tutor;
 
 	/*io command field*/
-	int 				command,
-							recv_or_transm;
+	int 				command;
 
 	/*spec_passup fields*/
 	state_t *		oldSYSBP;
@@ -61,5 +61,16 @@ typedef struct semd_t {
 	// Queue of PCBs blocked on the semaphore
 	struct list_head	s_procQ;
 } semd_t;
+
+//Devices semaphore data structure
+typedef struct semdev {
+	semd_t disk[DEV_PER_INT];
+	semd_t tape[DEV_PER_INT];
+	semd_t network[DEV_PER_INT];
+	semd_t printer[DEV_PER_INT];
+	semd_t terminalR[DEV_PER_INT];
+	semd_t terminalT[DEV_PER_INT];
+	semd_t pseudoclock;
+} semdev;
 
 #endif

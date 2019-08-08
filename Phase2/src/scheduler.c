@@ -1,6 +1,5 @@
 #include "scheduler.h"
 
-extern void addokbuf(char *strp);
 /*
  * In questa fase, il sistema operativo entra nell'entry point (il main)
  * dove vengono inizializzate le varie strutture e dopodichè passa il testimone
@@ -18,6 +17,7 @@ void  context() {
 
 		//controlliamo che il processore sia libero
 		if(curr_proc != NULL){
+
 			/*se il proccessore non è libero,ovvero curr_proc sta puntando ad un pcb,
 			si riporta la priorità del processo corrente a original_priority*/
 			curr_proc->priority = curr_proc->original_priority;
@@ -40,19 +40,39 @@ void  context() {
 		curr_proc = removeProcQ(&ready_queue_h);
 
 		//tracciamento tempo esecuzione processo
-		if(curr_proc->wallclock_time == 0) curr_proc->wallclock_time = getTODLO();
+		if(curr_proc->wallclock_time == 0)
+			curr_proc->wallclock_time = getTODLO();
 
 		curr_proc->user_time_new = getTODLO();
+
+		setTIMER(TIME_SLICE);
 
 		//carica lo stato del processo
 		LDST(&curr_proc->p_s);
 }
 
 void  scheduler(){
+
 	//controllo se ci sono processi da eseguire
+
 	if(emptyProcQ(&ready_queue_h)){
-		HALT();
+		if(curr_proc != NULL)
+			context();
+		else{
+
+			if(ProcBlocked > 0){
+				setTIMER(TIME_SLICE);
+				setSTATUS((getSTATUS() | STATUS_IEc) | STATUS_INT_UNMASKED);
+				WAIT();
+			}
+			else{
+				HALT();
+			}
+		}
+	}
+	else{
+
+			context();
 	}
 
-	context();
 }

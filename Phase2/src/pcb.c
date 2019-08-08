@@ -33,7 +33,7 @@ HIDDEN void setDefault (pcb_t* p) {
     p->user_time_new = p->kernel_time_new = 0;
     p->wallclock_time = 0;
     p->tutor = 0;
-    p->command = p->recv_or_transm = 0;
+    p->command = 0;
 
     p->oldSYSBP = NULL; 
     p->newSYSBP = NULL;

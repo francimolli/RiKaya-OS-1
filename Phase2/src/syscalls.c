@@ -37,8 +37,6 @@ int Create_Process(state_t *statep, int priority, void **cpid){
 		if(cpid != NULL)
 			*cpid = child_proc;
 
-
-
 		return 0;
 }
 
@@ -66,27 +64,27 @@ int Terminate_Process(void **pid){
 				tmp = tmp->p_parent;
 
 			//tmp è il tutor, inserisco come figli di tmp i figli di curr_proc, se curr_proc ha figli
-			if(!emptyChild(curr_proc)){
+			if(~emptyChild(curr_proc)){
 				struct list_head* iter ;
 				list_for_each(iter,&ready_queue_h){
 					container_of(iter,pcb_t,p_next)->p_parent = tmp;
 				}
 			}
-
+/*
 			//si toglie il curr_proc dalla ready_queue_h
 			if(outProcQ(&ready_queue_h, curr_proc) == NULL)
-				return -1;
-
+				return -1;//non va fatto il curr_proc non si trova nella ready queue
+*/
 			//si toglie il curr_proc dalla lista dei figli del padre (che c'è di sicuro)
 			outChild(curr_proc->p_parent);
 
 			//si restituisce il pcb alla pcbFree list
 			freePcb(curr_proc);
-
+/*
 			//si toglie il pcb del semaforo in cui è bloccato
-			if(outBlocked(curr_proc) == NULL)
-				return -1;
-
+			if(outBlocked(curr_proc))
+				ProcBlocked--;//nemmeno questo, il curr_proc se sta girando non è bloccato su un semaforo
+*/
 			scheduler();
 
 			return 0;
@@ -102,7 +100,7 @@ int Terminate_Process(void **pid){
 			while(tmp->tutor == 0)
 				tmp = tmp->p_parent;
 
-			if(!emptyChild(q)){
+			if(~emptyChild(q)){
 				struct list_head* iter ;
 				list_for_each(iter,&ready_queue_h){
 					container_of(iter,pcb_t,p_next)->p_parent = tmp;
@@ -114,9 +112,8 @@ int Terminate_Process(void **pid){
 
 			outChild(q->p_parent);
 			freePcb(q);
-			if(outBlocked(q) == NULL)
-				return -1;
-
+			if(outBlocked(q))
+				ProcBlocked--;
 			return 0;
 		}
 
@@ -141,7 +138,9 @@ void Verhogen(int *semaddr){
 
 	if(*semaddr <= 0){
 		if(p != NULL){
+
 			p->p_semkey = NULL;
+			ProcBlocked--;
 			insertProcQ(&ready_queue_h, p);
 		}
 	}
@@ -154,9 +153,11 @@ void Passeren(int *semaddr){
 	su quel semaforo, il processo corrente, viene tolto dal processore per
 	essere inserito nella lista di processi bloccati sul semaforo indicato da semaddr*/
 	(*semaddr)--;
-
+	//addokbuf("IN p\n");
 	if(*semaddr < 0){
-		if(insertBlocked(semaddr, curr_proc) == FALSE){
+		if(~insertBlocked(semaddr, curr_proc)){
+
+			ProcBlocked++;
 			curr_proc->p_semkey = semaddr;
 			outProcQ(&ready_queue_h, curr_proc);
 			curr_proc = NULL;
@@ -172,25 +173,25 @@ void Wait_Clock(){
 	definita nella fase 1 per la ASL). Una volta passato il tick del clock del sistema sarà necessario
 	fare un numero di Verhogen in modo da risvegliare tutti i processi bloccati.*/
 
-	if(semDevices[CLOCK_SEM] == 0)//siginifica che il semaforo è vuoto, ovvero nessuno ha richiesto la Wait_Clock
+	if(*semDevices.pseudoclock.s_key)//siginifica che il semaforo è vuoto, ovvero nessuno ha richiesto la Wait_Clock
 		SET_IT(100);
-	Passeren(&semDevices[CLOCK_SEM]);
+	Passeren(semDevices.pseudoclock.s_key);
 
 }
 
 int Do_IO(U32 command, U32 *reg, U32 term_command){
-
+	
 	curr_proc->command = command;
-	curr_proc->recv_or_transm = term_command;
 	woken_proc = curr_proc;
 	IO_request(command, reg, term_command);
-	return *dev_status;
+
+	return (int) *dev_status;
 }
 
 void Set_Tutor(){
 
 	//il curr_proc può diventare padre dei processi orfani
-	curr_proc->tutor = 1;
+	curr_proc->tutor = TRUE;
 }
 
 int Spec_Passup(int type, state_t *old, state_t *new){

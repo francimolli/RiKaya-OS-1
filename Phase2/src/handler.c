@@ -1,27 +1,54 @@
 #include "handler.h"
 
+
 void Handler() {
 
 	//creo una variabile che contiene il codice dell'eccezione inizializzata
-	int cause_code = CAUSE_EXCCODE_GET(getCAUSE());
+	int cause_code = 0;
 
-	//gesione tempo esecuzione processo: si passa da user mode a kernel mode
-	curr_proc->user_time_old += getTODLO() - curr_proc->user_time_new;
-	curr_proc->user_time_new = 0;
-	curr_proc->kernel_time_new = getTODLO();
+	if(curr_proc != NULL){
+
+		cause_code = CAUSE_EXCCODE_GET(getCAUSE());
+		//gesione tempo esecuzione processo: si passa da user mode a kernel mode
+		curr_proc->user_time_old += getTODLO() - curr_proc->user_time_new;
+		curr_proc->user_time_new = 0;
+		curr_proc->kernel_time_new = getTODLO();
+
+		//controllo se l'accesso sia in usermode, altrimenti si passa la gestione al PgmTrapHandler();
+		if((curr_proc->p_s.status >> 1) & 0x00000001){
+
+			/*accesso in user mode, per fronteggiare l'eccezione, in questo caso una Reserved Instruction,
+			si imposta il campo Cause.ExcCode con il valore EXC_RESERVEDINSTR*/
+			curr_proc->p_s.cause = CAUSE_EXCCODE_SET(curr_proc->p_s.cause, EXC_RESERVEDINSTR);
+			//si richiama il gestore di livello superiore, il PgmTrapHandler;
+			PgmTrapHandler();
+		}
+	}
+	else{//caso in cui non ci siano processi da schedulare ma ci siano processi bloccati
+		
+		cause_code = EXC_INTERRUPT;
+	}
 
 	switch(cause_code){
 
 		case EXC_INTERRUPT : //handler INTERRUPT
-				//copio stato
-				cpy_state((state_t*) INT_OLDAREA, &curr_proc->p_s);
 
 				/*quando si affronta un interrupt lo si affronta con la kernel mode abilitata,
 				la virtual memory disabilitata, come già settato in fase di inizializzazione*/
 
+
+				if(curr_proc != NULL){
+					//copio stato
+					cpy_state((state_t*) INT_OLDAREA, &curr_proc->p_s);
+				}
+
 				Interrupt_Handler();
 
-				LDST((state_t*) INT_OLDAREA);
+				//LDST((state_t*) INT_OLDAREA);
+				if(curr_proc != NULL)
+					LDST(&curr_proc->p_s);
+				else
+					LDST(old_area);
 
 			break;
 
@@ -132,23 +159,13 @@ void Handler() {
 
 		case EXC_SYSCALL : //handler SYSCALL
 
-				//copio nello state_t del processo che ha ricevuto l'interrupt ciò che risiede nella old area
+				//copio nello state_t del processo che ha ricevuto l'exception ciò che risiede nella old area
 				cpy_state((state_t*) SYSBK_OLDAREA, &curr_proc->p_s);
 
 				//incremento del program counter di una WORD_SIZE
 				curr_proc->p_s.pc_epc += WORD_SIZE;
 
 				int result = 0;
-
-				//controllo se l'accesso è in usermode, se no si passa la gestione al PgmTrapHandler();
-				if((curr_proc->p_s.status >> 1) & 0x00000001){
-
-					/*accesso in user mode, per fronteggiare l'eccezione, in questo caso una Reserved Instruction,
-					si imposta il campo Cause.ExcCode con il valore EXC_RESERVEDINSTR*/
-					curr_proc->p_s.cause = CAUSE_EXCCODE_SET(curr_proc->p_s.cause, EXC_RESERVEDINSTR);
-					//si richiama il gestore di livello superiore, il PgmTrapHandler;
-					PgmTrapHandler();
-				}
 
 				//identificazione tipo di system call, reg_a0
 				switch((int) curr_proc->p_s.reg_a0){
@@ -232,7 +249,7 @@ void Handler() {
 				curr_proc->p_s.reg_v0 = result;
 				//possibile incremento del program counter
 
-				LDST((state_t *)SYSBK_OLDAREA);
+				LDST(&curr_proc->p_s);
 			break;
 
 		case EXC_BREAKPOINT : //handler BREAKPOINT
@@ -338,8 +355,10 @@ void Handler() {
 		break;
 	}
 
-	//gestione tempo esecuzione si passa da kernel mode a user user mode
-	curr_proc->kernel_time_old = getTODLO() - curr_proc->kernel_time_new;
-	curr_proc->kernel_time_new = 0;
-	curr_proc->user_time_new = getTODLO();
+	if(curr_proc != NULL){
+		//gestione tempo esecuzione si passa da kernel mode a user user mode
+		curr_proc->kernel_time_old = getTODLO() - curr_proc->kernel_time_new;
+		curr_proc->kernel_time_new = 0;
+		curr_proc->user_time_new = getTODLO();
+	}
 }
