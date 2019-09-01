@@ -153,10 +153,9 @@ void Passeren(int *semaddr){
 	su quel semaforo, il processo corrente, viene tolto dal processore per
 	essere inserito nella lista di processi bloccati sul semaforo indicato da semaddr*/
 	(*semaddr)--;
-	//addokbuf("IN p\n");
+
 	if(*semaddr < 0){
 		if(~insertBlocked(semaddr, curr_proc)){
-
 			ProcBlocked++;
 			curr_proc->p_semkey = semaddr;
 			outProcQ(&ready_queue_h, curr_proc);
@@ -179,13 +178,85 @@ void Wait_Clock(){
 
 }
 
-int Do_IO(U32 command, U32 *reg, U32 term_command){
-	
-	curr_proc->command = command;
-	woken_proc = curr_proc;
-	IO_request(command, reg, term_command);
+void Do_IO(U32 command, U32 *reg, U32 term_command){
 
-	return (int) *dev_status;
+	int *semaddr;
+  U32 offset = 0;
+
+	/*si tiene nota del comando da dare al device per fare I/O,
+	tornerà utile quando il processo verrà risvegliato*/
+	curr_proc->command = command;
+
+  /*è necessario ottenere un indice all'interno di semDevices, ovvero ottener il semaforo associato
+  al device che richiede di fare I/O. Per fare ciò si considera che da DEV_REGS_START a TERM0ADDR sono
+  presenti le locazioni di memoria dedicate ai devices quali disk, tape, network, printer. Se reg è superiore a
+  TERM0ADDR, allora il semaforo è associato ad un terminale e il commando può esssere associato alla
+  trasmissione o alla ricezione in base al contenuto della variabile term_command.*/
+
+	if(reg >= (U32 *)TERM0ADDR){
+    //calcolo offset all'interno dell'array di semafori per il terminale
+    offset = (reg - (U32 *)TERM0ADDR)/DEV_REG_SIZE_W;
+
+    //registro associato ad un terminale
+    if(term_command){
+
+      //richiesta di I/O su un terminale in ricezione, si scrive il comando nel campo recv_command
+      semaddr = semDevices.terminalR[offset].s_key;
+
+			//semaforo con valore 1, terminale libero in ricezione
+			if(!*semaddr)
+				((termreg_t *)reg)->recv_command = command;
+    }
+  	else{
+
+      //richiesta di I/O su un terminale in trasmissione, si scrive il comando nel campo transm_command
+      semaddr = semDevices.terminalT[offset].s_key;
+
+			//semaforo con valore 1, terminale libero in trasmissione
+			if(!*semaddr)
+				((termreg_t *)reg)->transm_command = command;
+    }
+  }
+  else{
+    /*per calcolare l'offset è necessario sapere a quale indirizzo di memoria iniziano i registri dedicati ad
+    ogni diverso tipo di device tra disk, tape, network e printer. Per ottenere l'indirizzo di memoria in cui
+    si trovano i registri associati ai disk, tape, network o printer si usa la macro DEV_ADDRESS(LINENO, DEVNO),
+    utilizzando come DEVNO lo 0. Per esempio per ottenere l'indirizzo di memoria da cui parte la memorizzazione
+    dei devices di tipo tape, si usa DEV_ADDRESS(INT_TAPE - INT_LOWEST, 0). Infine per ottenere l'offset
+    relativo al device che ha il registro reg, si procede come per il terminale.*/
+
+    if(reg >= (U32 *)DISK_START && reg < (U32 *)TAPE_START){
+      offset = (reg - (U32 *)DISK_START)/DEV_REG_SIZE_W;
+      semaddr = semDevices.disk[offset].s_key;
+    }
+    else if(reg >= (U32 *)TAPE_START && reg < (U32 *)NETWORK_START){
+      offset = (reg - (U32 *)TAPE_START)/DEV_REG_SIZE_W;
+      semaddr = semDevices.tape[offset].s_key;
+    }
+    else if(reg >= (U32 *)NETWORK_START && reg < (U32 *)PRINTER_START){
+      offset = (reg - (U32 *)NETWORK_START)/DEV_REG_SIZE_W;
+      semaddr = semDevices.network[offset].s_key;
+    }
+    else{
+      offset = (reg - (U32 *)PRINTER_START)/DEV_REG_SIZE_W;
+      semaddr = semDevices.printer[offset].s_key;
+    }
+
+		//si scrive il comando nel campo command se il semaforo ha valore 1
+		if(!*semaddr)
+			((dtpreg_t *)reg)->command = command;
+  }
+
+	//il processo che richiede I/O va bloccato
+	if(wakeup_proc == curr_proc){
+			Passeren(semaddr);
+	}
+	else{
+		(*semaddr)--;
+		ProcBlocked++;
+		insertBlocked(semaddr, wakeup_proc);
+		outProcQ(&ready_queue_h, wakeup_proc);
+	}
 }
 
 void Set_Tutor(){

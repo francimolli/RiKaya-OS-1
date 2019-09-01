@@ -1,6 +1,5 @@
 #include "handler.h"
 
-
 void Handler() {
 
 	//creo una variabile che contiene il codice dell'eccezione inizializzata
@@ -24,8 +23,9 @@ void Handler() {
 			PgmTrapHandler();
 		}
 	}
-	else{//caso in cui non ci siano processi da schedulare ma ci siano processi bloccati
-		
+	else{
+
+		//caso in cui non ci siano processi da schedulare ma ci siano processi bloccati
 		cause_code = EXC_INTERRUPT;
 	}
 
@@ -36,21 +36,13 @@ void Handler() {
 				/*quando si affronta un interrupt lo si affronta con la kernel mode abilitata,
 				la virtual memory disabilitata, come già settato in fase di inizializzazione*/
 
-
-				if(curr_proc != NULL){
-					//copio stato
-					cpy_state((state_t*) INT_OLDAREA, &curr_proc->p_s);
-				}
-
 				Interrupt_Handler();
 
-				//LDST((state_t*) INT_OLDAREA);
-				if(curr_proc != NULL)
-					LDST(&curr_proc->p_s);
+				if(curr_proc)
+					LDST((state_t*) INT_OLDAREA);
 				else
-					LDST(old_area);
-
-			break;
+					scheduler();
+				break;
 
 		case EXC_TLBMOD :
 
@@ -163,7 +155,7 @@ void Handler() {
 				cpy_state((state_t*) SYSBK_OLDAREA, &curr_proc->p_s);
 
 				//incremento del program counter di una WORD_SIZE
-				curr_proc->p_s.pc_epc += WORD_SIZE;
+				curr_proc->p_s.pc_epc += 4;
 
 				int result = 0;
 
@@ -206,9 +198,9 @@ void Handler() {
 						break;
 
 					case WAITIO :
-
-						result = Do_IO((U32) curr_proc->p_s.reg_a1, (U32 *) curr_proc->p_s.reg_a2, (U32) curr_proc->p_s.reg_a3);
-
+						wakeup_proc = curr_proc;
+						Do_IO((U32) curr_proc->p_s.reg_a1, (U32 *) curr_proc->p_s.reg_a2, (U32) curr_proc->p_s.reg_a3);
+						result = curr_proc->p_s.reg_v0;
 						break;
 
 					case SETTUTOR :
@@ -246,7 +238,7 @@ void Handler() {
 						break;
 				}
 
-				curr_proc->p_s.reg_v0 = result;
+				curr_proc->p_s.reg_v0 = (U32) result;
 				//possibile incremento del program counter
 
 				LDST(&curr_proc->p_s);

@@ -60,7 +60,7 @@ pcb_t* allocAndSet (const memaddr m, int priorityVal) {
 void initSemDevices(){
 
   for(int i = 0; i < MAX_DEVICES; i++)
-    semDev[i] = 1;
+    semDev[i] = 0;
 
   for(int i = 0; i < DEV_PER_INT; i++){
 

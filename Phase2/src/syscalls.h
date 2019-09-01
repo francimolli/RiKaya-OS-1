@@ -13,7 +13,7 @@ int lookup_proc(pcb_t *p, pcb_t *q);
 void Verhogen(int *semaddr);
 void Passeren(int *semaddr);
 void Wait_Clock();
-int Do_IO(U32 command, U32 *reg, U32 term_command);
+void Do_IO(U32 command, U32 *reg, U32 term_command);
 void Set_Tutor();
 int Spec_Passup(int type, state_t *old, state_t *new);
 void Get_pid_ppid(void **pid, void **ppid);

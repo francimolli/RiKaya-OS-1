@@ -15,7 +15,7 @@ extern void test();
 int main () {
 
     pcb_t *proc;
-    
+
     //Popolo le New Areas nel ROM Reserved Frame
     populateNewAreas();
 
@@ -29,7 +29,7 @@ int main () {
     initSemDevices();
 
     //Inizializzo puntatore a INT_OLDAREA per il caso in cui il processore sia in Wait
-    old_area = NULL;
+    old_area = (state_t *) INT_OLDAREA;;
 
     //Inizializzo il puntatore al processo corrente
     curr_proc = NULL;

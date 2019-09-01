@@ -45,8 +45,6 @@ void  context() {
 
 		curr_proc->user_time_new = getTODLO();
 
-		setTIMER(TIME_SLICE);
-
 		//carica lo stato del processo
 		LDST(&curr_proc->p_s);
 }
@@ -54,20 +52,17 @@ void  context() {
 void  scheduler(){
 
 	//controllo se ci sono processi da eseguire
-
 	if(emptyProcQ(&ready_queue_h)){
 		if(curr_proc != NULL)
 			context();
 		else{
-
 			if(ProcBlocked > 0){
 				setTIMER(TIME_SLICE);
 				setSTATUS((getSTATUS() | STATUS_IEc) | STATUS_INT_UNMASKED);
 				WAIT();
 			}
-			else{
+			else
 				HALT();
-			}
 		}
 	}
 	else{

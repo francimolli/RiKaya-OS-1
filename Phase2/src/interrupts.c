@@ -6,15 +6,7 @@ void Interrupt_Handler(){
   ciascun bit del campo IP del registro CAUSE. Si utilizza la macro CAUSE_IP_GET
   per verificare se l'i-esimo bit di IP vale 1.*/
 
-  U32 cause = 0;
-
-  if(curr_proc != NULL)
-    cause = curr_proc->p_s.cause;
-  else{//caso in cui il processore sia in stato waiting
-
-    old_area = (state_t *) INT_OLDAREA;
-    cause = old_area->cause;
-  }
+  U32 cause = old_area->cause;
 
   dtpreg_t *dev;//puntatore al registro del device che ha sollevato l'interrupt
   termreg_t *term;//puntatore al registro del terminale che ha sollevato l'interrupt
@@ -37,13 +29,13 @@ void Interrupt_Handler(){
        p = removeBlocked(&wait_clock_sem_key);
        insertProcQ(&ready_queue_h, p);
      }*/
-     
+
      int *semaddr = semDevices.pseudoclock.s_key;
-     while(*semaddr <= 0){
+     while(*semaddr < 0){
        Verhogen(semaddr);
      }
 
-     SET_IT(TIME_SLICE);//acknowledgement scrivendo un nuovo valore all'interno dell'interval timer
+     SET_IT(100);//acknowledgement scrivendo un nuovo valore all'interno dell'interval timer
 
   }
 
@@ -64,7 +56,7 @@ void Interrupt_Handler(){
         tape, network, printer.*/
 
         dev = (dtpreg_t *) (DISK_START + i * DEV_REG_SIZE_W);
-        dev_status = &(dev->status);
+
 
         /*il processo corrente richiede un'operazione di I/O su questo device con la syscall
         Do_IO, perciò esso deve essere bloccato fino a quando l'operazione di I/O non è terminata
@@ -76,24 +68,21 @@ void Interrupt_Handler(){
         scritto l'ack nel registro del device in modo da concludere l'operazione e farne partire un'altra
         immediatamente*/
 
-        if(*semDevices.disk[i].s_key <= 0){
-          woken_proc = removeBlocked(semDevices.disk[i].s_key);
+        if(*semDevices.disk[i].s_key < 0){
+          wakeup_proc = removeBlocked(semDevices.disk[i].s_key);
           (*semDevices.disk[i].s_key)++;
           ProcBlocked--;
-          woken_proc->p_s.reg_v0 = dev->status;
-          insertProcQ(&ready_queue_h, woken_proc);
+          wakeup_proc->p_s.reg_v0 = dev->status;
+          insertProcQ(&ready_queue_h, wakeup_proc);
         }
 
         dev->command = DEV_C_ACK;//acknowledgement
-        //attesa completamento richiesta di I/O
-        while(dev->status != DEV_S_READY)
-          ;
 
         //parte immediatamente un'altra operazione (se c'è)
         if(*semDevices.disk[i].s_key < 0){
-          woken_proc = removeBlocked(semDevices.disk[i].s_key);
+          wakeup_proc = removeBlocked(semDevices.disk[i].s_key);
           (*semDevices.disk[i].s_key)++;
-          IO_request(woken_proc->command, (U32 *) dev, 0);
+          Do_IO(wakeup_proc->command, (U32 *) dev, 0);
         }
       }
     }
@@ -108,26 +97,23 @@ void Interrupt_Handler(){
       if(getDevice(INT_TAPE, i)){
 
         dev = (dtpreg_t *) (TAPE_START + (i * DEV_REG_SIZE_W));
-        dev_status = &(dev->status);
 
-        if(*semDevices.tape[i].s_key <= 0){
-          woken_proc = removeBlocked(semDevices.tape[i].s_key);
+
+        if(*semDevices.tape[i].s_key < 0){
+          wakeup_proc = removeBlocked(semDevices.tape[i].s_key);
           (*semDevices.tape[i].s_key)++;
           ProcBlocked--;
-          woken_proc->p_s.reg_v0 = dev->status;
-          insertProcQ(&ready_queue_h, woken_proc);
+          wakeup_proc->p_s.reg_v0 = dev->status;
+          insertProcQ(&ready_queue_h, wakeup_proc);
         }
 
         dev->command = DEV_C_ACK;//acknowledgement
-        //attesa completamento richiesta di I/O
-        while(dev->status != DEV_S_READY)
-          ;
 
         //parte immediatamente un'altra operazione (se c'è)
         if(*semDevices.tape[i].s_key < 0){
-          woken_proc = removeBlocked(semDevices.tape[i].s_key);
+          wakeup_proc = removeBlocked(semDevices.tape[i].s_key);
           (*semDevices.tape[i].s_key)++;
-          IO_request(woken_proc->command, (U32 *) dev, 0);
+          Do_IO(wakeup_proc->command, (U32 *) dev, 0);
         }
       }
     }
@@ -142,26 +128,23 @@ void Interrupt_Handler(){
       if(getDevice(INT_UNUSED, i)){
 
         dev = (dtpreg_t *) (NETWORK_START + (i * DEV_REG_SIZE_W));
-        dev_status = &(dev->status);
 
-        if(*semDevices.network[i].s_key <= 0){
-          woken_proc = removeBlocked(semDevices.network[i].s_key);
+
+        if(*semDevices.network[i].s_key < 0){
+          wakeup_proc = removeBlocked(semDevices.network[i].s_key);
           (*semDevices.network[i].s_key)++;
           ProcBlocked--;
-          woken_proc->p_s.reg_v0 = dev->status;
-          insertProcQ(&ready_queue_h, woken_proc);
+          wakeup_proc->p_s.reg_v0 = dev->status;
+          insertProcQ(&ready_queue_h, wakeup_proc);
         }
 
         dev->command = DEV_C_ACK;//acknowledgement
-        //attesa completamento richiesta di I/O
-        while(dev->status != DEV_S_READY)
-          ;
 
         //parte immediatamente un'altra operazione (se c'è)
         if(*semDevices.network[i].s_key < 0){
-          woken_proc = removeBlocked(semDevices.network[i].s_key);
+          wakeup_proc = removeBlocked(semDevices.network[i].s_key);
           (*semDevices.network[i].s_key)++;
-          IO_request(woken_proc->command, (U32 *) dev, 0);
+          Do_IO(wakeup_proc->command, (U32 *) dev, 0);
         }
       }
     }
@@ -177,26 +160,23 @@ void Interrupt_Handler(){
       if(getDevice(INT_PRINTER, i)){
 
         dev = (dtpreg_t *) (PRINTER_START + (i * DEV_REG_SIZE_W));
-        dev_status = &(dev->status);
 
-        if(*semDevices.printer[i].s_key <= 0){
-          woken_proc = removeBlocked(semDevices.printer[i].s_key);
+
+        if(*semDevices.printer[i].s_key < 0){
+          wakeup_proc = removeBlocked(semDevices.printer[i].s_key);
           (*semDevices.printer[i].s_key)++;
           ProcBlocked--;
-          woken_proc->p_s.reg_v0 = dev->status;
-          insertProcQ(&ready_queue_h, woken_proc);
+          wakeup_proc->p_s.reg_v0 = dev->status;
+          insertProcQ(&ready_queue_h, wakeup_proc);
         }
 
         dev->command = DEV_C_ACK;//acknowledgement
-        //attesa completamento richiesta di I/O
-        while(dev->status != DEV_S_READY)
-          ;
 
         //parte immediatamente un'altra operazione (se c'è)
         if(*semDevices.printer[i].s_key < 0){
-          woken_proc = removeBlocked(semDevices.printer[i].s_key);
+          wakeup_proc = removeBlocked(semDevices.printer[i].s_key);
           (*semDevices.printer[i].s_key)++;
-          IO_request(woken_proc->command, (U32 *) dev, 0);
+          Do_IO(wakeup_proc->command, (U32 *) dev, 0);
         }
       }
     }
@@ -224,60 +204,60 @@ void Interrupt_Handler(){
           ricezione/trasmissione completata, si legge se il device è ready.
           Dunque si legge lo status byte facendo un & bitwise con la statusmask, 0xFF presente nel file const_rikaya.*/
 
-          if(*semDevices.terminalR[i].s_key <= 0 &&
-             (term->recv_status & STATUSMASK) != DEV_S_READY){
+          if((term->recv_status & STATUSMASK) != DEV_S_READY){
 
-                dev_status = &(term->recv_status);
-                //caso in cui il terminale i ha sollevato un interrupt solo per la ricezione
-                woken_proc = removeBlocked(semDevices.terminalR[i].s_key);
-                (*semDevices.terminalT[i].s_key)++;
-                ProcBlocked--;
-                woken_proc->p_s.reg_v0 = term->recv_status;
-                insertProcQ(&ready_queue_h, woken_proc);
+                if(*semDevices.terminalR[i].s_key < 0){
+                  //caso in cui il terminale i ha sollevato un interrupt solo per la ricezione
+                  wakeup_proc = removeBlocked(semDevices.terminalR[i].s_key);
+                  (*semDevices.terminalT[i].s_key)++;
+                  ProcBlocked--;
+                  wakeup_proc->p_s.reg_v0 = term->recv_status;
+                  insertProcQ(&ready_queue_h, wakeup_proc);
+                }
 
-                term->recv_command = DEV_C_ACK;
+            term->recv_command = DEV_C_ACK;
 
-                while((term->recv_status & STATUSMASK) != DEV_S_READY)
-                  ;
+            //prossima operazione
+            if(*semDevices.terminalR[i].s_key < 0){
+
+              wakeup_proc = removeBlocked(semDevices.terminalR[i].s_key);
+              (*semDevices.terminalR[i].s_key)++;
+              //chiamata di IO sul terminale in ricezione
+              Do_IO(wakeup_proc->command,(U32 *) term, TRUE);
+            }
           }
 
-          //prossima operazione
-          if(*semDevices.terminalR[i].s_key < 0){
+          if((term->transm_status & STATUSMASK) != DEV_S_READY){
 
-            woken_proc = removeBlocked(semDevices.terminalR[i].s_key);
-            (*semDevices.terminalR[i].s_key)++;
-            //chiamata di IO sul terminale in ricezione
-            IO_request(woken_proc->command,(U32 *) term, TRUE);
-          }
+              if(*semDevices.terminalT[i].s_key < 0){
 
-          if(*semDevices.terminalT[i].s_key <= 0 &&
-          (term->transm_status & STATUSMASK) != DEV_S_READY){
-
-                dev_status = &(term->transm_status);
                 //caso in cui il terminale i ha sollevato un interrupt solo per la trasmissione
-                woken_proc = removeBlocked(semDevices.terminalT[i].s_key);
+                wakeup_proc = removeBlocked(semDevices.terminalT[i].s_key);
                 (*semDevices.terminalT[i].s_key)++;
                 ProcBlocked--;
-                woken_proc->p_s.reg_v0 = term->transm_status;
-                insertProcQ(&ready_queue_h, woken_proc);
+                wakeup_proc->p_s.reg_v0 = term->transm_status;
 
-                term->transm_command = DEV_C_ACK;
+                insertProcQ(&ready_queue_h, wakeup_proc);
+              }
 
-          //prossima operazione
-          if(*semDevices.terminalT[i].s_key < 0){
 
-            woken_proc = removeBlocked(semDevices.terminalT[i].s_key);
-            (*semDevices.terminalT[i].s_key)++;
-            //chiamata di IO sul terminale in trasmissione
-            IO_request(woken_proc->command,(U32 *) term, FALSE);
-          }
-          }
+              term->transm_command = DEV_C_ACK;
 
+              //prossima operazione
+              if(*semDevices.terminalT[i].s_key < 0){
+
+                wakeup_proc = removeBlocked(semDevices.terminalT[i].s_key);
+                (*semDevices.terminalT[i].s_key)++;
+                //chiamata di IO sul terminale in trasmissione
+                Do_IO(wakeup_proc->command,(U32 *) term, FALSE);
+              }
+            }
         }
 
     }
+
   }
-  scheduler();
+
 }
 
 int getDevice(int line_no, int dev_no){
@@ -300,86 +280,6 @@ int getDevice(int line_no, int dev_no){
   if(*INTR_CURRENT_BITMAP(line_no) & (1 << dev_no))
     return 1;
 
+
   return 0;
-}
-
-void IO_request(U32 command, U32 *reg, U32 term_command){
-
-  int *semaddr;
-  U32 offset = 0;
-
-  /*è necessario ottenere un indice all'interno di semDevices, ovvero ottener il semaforo associato
-  al device che richiede di fare I/O. Per fare ciò si considera che da DEV_REGS_START a TERM0ADDR sono
-  presenti le locazioni di memoria dedicate ai devices quali disk, tape, network, printer. Se reg è superiore a
-  TERM0ADDR, allora il semaforo è associato ad un terminale e il commando può esssere associato alla
-  trasmissione o alla ricezione in base al contenuto della variabile term_command.*/
-
-  if(reg >= (U32 *)TERM0ADDR){
-    //calcolo offset all'interno dell'array di semafori per il terminale
-    offset = (reg - (U32 *)TERM0ADDR)/DEV_REG_SIZE_W;
-
-    //registro associato ad un terminale
-    if(term_command){
-
-      //richiesta di I/O su un terminale in ricezione, si scrive il comando nel campo recv_command
-      dev_status = &((termreg_t *)reg)->recv_status;
-      semaddr = semDevices.terminalR[offset].s_key;
-      if(~*semaddr)
-        ((termreg_t *)reg)->recv_command = command;
-    }
-    else{
-
-      //richiesta di I/O su un terminale in trasmissione, si scrive il comando nel campo transm_command
-      dev_status = &((termreg_t *)reg)->transm_status;
-      semaddr = semDevices.terminalT[offset].s_key;
-      if(~*semaddr){
-        ((termreg_t *)reg)->transm_command = command;
-      }
-    }
-  }
-  else{
-    /*per calcolare l'offset è necessario sapere a quale indirizzo di memoria iniziano i registri dedicati ad
-    ogni diverso tipo di device tra disk, tape, network e printer. Per ottenere l'indirizzo di memoria in cui
-    si trovano i registri associati ai disk, tape, network o printer si usa la macro DEV_ADDRESS(LINENO, DEVNO),
-    utilizzando come DEVNO lo 0. Per esempio per ottenere l'indirizzo di memoria da cui parte la memorizzazione
-    dei devices di tipo tape, si usa DEV_ADDRESS(INT_TAPE - INT_LOWEST, 0). Infine per ottenere l'offset
-    relativo al device che ha il registro reg, si procede come per il terminale.*/
-
-    if(reg >= (U32 *)DISK_START && reg < (U32 *)TAPE_START){
-      offset = (reg - (U32 *)DISK_START)/DEV_REG_SIZE_W;
-      semaddr = semDevices.disk[offset].s_key;
-    }
-    else if(reg >= (U32 *)TAPE_START && reg < (U32 *)NETWORK_START){
-      offset = (reg - (U32 *)TAPE_START)/DEV_REG_SIZE_W;
-      semaddr = semDevices.tape[offset].s_key;
-    }
-    else if(reg >= (U32 *)NETWORK_START && reg < (U32 *)PRINTER_START){
-      offset = (reg - (U32 *)NETWORK_START)/DEV_REG_SIZE_W;
-      semaddr = semDevices.network[offset].s_key;
-    }
-    else{
-      offset = (reg - (U32 *)PRINTER_START)/DEV_REG_SIZE_W;
-      semaddr = semDevices.printer[offset].s_key;
-    }
-
-    //registro associato ad un disk, tape, network o printer
-    dev_status = &((dtpreg_t *)reg)->status;
-    if(~*semaddr)
-      ((dtpreg_t *)reg)->command = command;
-
-  }
-  if(semaddr != NULL){
-
-    if(curr_proc == woken_proc){
-
-      Passeren(semaddr);
-    }
-    else{
-
-      (*semaddr)--;
-      ProcBlocked++;
-      insertBlocked(semaddr, woken_proc);
-      outProcQ(&ready_queue_h, woken_proc);
-    }
-  }
 }
