@@ -3,7 +3,7 @@
 void Get_CPU_Time(U32 *user, U32 *kernel, U32 *wallclock){
 	/*aggiorno valori del tempo d'esecuzione (lo user_time non necessita di essere aggiornato
 	in quanto non è cambiato durante l'esecuzione della syscall)*/
-	curr_proc->kernel_time_old = getTODLO() - curr_proc->kernel_time_new;
+	curr_proc->kernel_time_old += getTODLO() - curr_proc->kernel_time_new;
 
 	*user = curr_proc->user_time_old;
 	*kernel = curr_proc->kernel_time_old;

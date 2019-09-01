@@ -18,7 +18,7 @@ void  context() {
 		//controlliamo che il processore sia libero
 		if(curr_proc != NULL){
 
-			/*se il proccessore non è libero,ovvero curr_proc sta puntando ad un pcb,
+			/*se il proccessore non è libero, ovvero curr_proc sta puntando ad un pcb,
 			si riporta la priorità del processo corrente a original_priority*/
 			curr_proc->priority = curr_proc->original_priority;
 
@@ -26,12 +26,14 @@ void  context() {
 			si incrementano la priorità di tutti i processi nella ready_queue per evitare la starvation*/
 			struct list_head* iter ;
 			list_for_each(iter,&ready_queue_h){
-				container_of(iter,pcb_t,p_next)->priority++;
+				container_of(iter,pcb_t, p_next)->priority++;
 			}
 
 			//gestione tempo esecuzione del processo, si passa da kernel mode a user mode
-			curr_proc->kernel_time_old += getTODLO() - curr_proc->kernel_time_new;
-			curr_proc->kernel_time_new = 0;
+			if(curr_proc->kernel_time_old >= 0){
+				curr_proc->kernel_time_old += getTODLO() - curr_proc->kernel_time_new;
+				curr_proc->kernel_time_new = 0;
+			}
 
 			//reinserimento nella coda dei processi pronti ad essere eseguiti
 			insertProcQ(&ready_queue_h, curr_proc);
@@ -40,7 +42,7 @@ void  context() {
 		curr_proc = removeProcQ(&ready_queue_h);
 
 		//tracciamento tempo esecuzione processo
-		if(curr_proc->wallclock_time == 0)
+		if(!curr_proc->wallclock_time)
 			curr_proc->wallclock_time = getTODLO();
 
 		curr_proc->user_time_new = getTODLO();
@@ -65,9 +67,6 @@ void  scheduler(){
 				HALT();
 		}
 	}
-	else{
-
-			context();
-	}
-
+	else
+		context();
 }

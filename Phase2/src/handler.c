@@ -9,8 +9,11 @@ void Handler() {
 
 		cause_code = CAUSE_EXCCODE_GET(getCAUSE());
 		//gesione tempo esecuzione processo: si passa da user mode a kernel mode
-		curr_proc->user_time_old += getTODLO() - curr_proc->user_time_new;
-		curr_proc->user_time_new = 0;
+		if(curr_proc->user_time_old >= 0){
+			curr_proc->user_time_old += getTODLO() - curr_proc->user_time_new;
+			curr_proc->user_time_new = 0;
+		}
+
 		curr_proc->kernel_time_new = getTODLO();
 
 		//controllo se l'accesso sia in usermode, altrimenti si passa la gestione al PgmTrapHandler();
@@ -349,8 +352,10 @@ void Handler() {
 
 	if(curr_proc != NULL){
 		//gestione tempo esecuzione si passa da kernel mode a user user mode
-		curr_proc->kernel_time_old = getTODLO() - curr_proc->kernel_time_new;
-		curr_proc->kernel_time_new = 0;
+		if(curr_proc->kernel_time_old >= 0){
+			curr_proc->kernel_time_old = getTODLO() - curr_proc->kernel_time_new;
+			curr_proc->kernel_time_new = 0;
+		}
 		curr_proc->user_time_new = getTODLO();
 	}
 }
