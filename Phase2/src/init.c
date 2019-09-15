@@ -39,7 +39,7 @@ pcb_t* allocAndSet (const memaddr m, int priorityVal) {
     pcb_t* p;
     p = allocPcb();
 
-    if (p==NULL){
+    if (p == NULL){
       HALT();
     }
 

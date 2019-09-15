@@ -8,13 +8,10 @@ void Handler() {
 	if(curr_proc != NULL){
 
 		cause_code = CAUSE_EXCCODE_GET(getCAUSE());
-		//gesione tempo esecuzione processo: si passa da user mode a kernel mode
-		if(curr_proc->user_time_old >= 0){
-			curr_proc->user_time_old += getTODLO() - curr_proc->user_time_new;
-			curr_proc->user_time_new = 0;
-		}
 
-		curr_proc->kernel_time_new = getTODLO();
+		/*time management: se c'è un processo in esecuzione e questo solleva un'eccezione, allora esso deve
+		passare dalla user mode alla kernel mode. Dunque è necessario aggiornare lo user time e far partire
+		il kernel time.*/
 
 		//controllo se l'accesso sia in usermode, altrimenti si passa la gestione al PgmTrapHandler();
 		if((curr_proc->p_s.status >> 1) & 0x00000001){
@@ -39,7 +36,17 @@ void Handler() {
 				/*quando si affronta un interrupt lo si affronta con la kernel mode abilitata,
 				la virtual memory disabilitata, come già settato in fase di inizializzazione*/
 
+				if(curr_proc != NULL){
+					if(curr_proc->user_time_new > 0){
+						curr_proc->user_time_old += getTODLO() - curr_proc->user_time_new;
+						curr_proc->user_time_new = 0;
+					}
+				}
 				Interrupt_Handler();
+
+				if(curr_proc != NULL){
+					curr_proc->user_time_new = getTODLO();
+				}
 
 				if(curr_proc)
 					LDST((state_t*) INT_OLDAREA);
@@ -154,11 +161,16 @@ void Handler() {
 
 		case EXC_SYSCALL : //handler SYSCALL
 
+				if(curr_proc->user_time_new > 0){
+					curr_proc->user_time_old += getTODLO() - curr_proc->user_time_new;
+					curr_proc->user_time_new = 0;
+				}
+				curr_proc->kernel_time_new = getTODLO();
 				//copio nello state_t del processo che ha ricevuto l'exception ciò che risiede nella old area
 				cpy_state((state_t*) SYSBK_OLDAREA, &curr_proc->p_s);
 
 				//incremento del program counter di una WORD_SIZE
-				curr_proc->p_s.pc_epc += 4;
+				curr_proc->p_s.pc_epc += WORD_SIZE;
 
 				int result = 0;
 
@@ -201,7 +213,10 @@ void Handler() {
 						break;
 
 					case WAITIO :
-						wakeup_proc = curr_proc;
+
+						wakeup_proc = curr_proc;/*assegnamento fatto qui in modo che all'interno della Do_IO
+																			si capisca che la richiesta di I/O arrivi dal processo corrente
+																			e non da un processo risvegliato da un'interrupt.*/
 						Do_IO((U32) curr_proc->p_s.reg_a1, (U32 *) curr_proc->p_s.reg_a2, (U32) curr_proc->p_s.reg_a3);
 						result = curr_proc->p_s.reg_v0;
 						break;
@@ -242,7 +257,13 @@ void Handler() {
 				}
 
 				curr_proc->p_s.reg_v0 = (U32) result;
-				//possibile incremento del program counter
+
+				//time management:
+				if(curr_proc->kernel_time_new > 0){
+					curr_proc->kernel_time_old += getTODLO() - curr_proc->kernel_time_new;
+					curr_proc->kernel_time_new = 0;
+				}
+				curr_proc->user_time_new = getTODLO();
 
 				LDST(&curr_proc->p_s);
 			break;
@@ -348,14 +369,5 @@ void Handler() {
 
 	    scheduler();
 		break;
-	}
-
-	if(curr_proc != NULL){
-		//gestione tempo esecuzione si passa da kernel mode a user user mode
-		if(curr_proc->kernel_time_old >= 0){
-			curr_proc->kernel_time_old = getTODLO() - curr_proc->kernel_time_new;
-			curr_proc->kernel_time_new = 0;
-		}
-		curr_proc->user_time_new = getTODLO();
 	}
 }

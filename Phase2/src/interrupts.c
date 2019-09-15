@@ -76,14 +76,13 @@ void Interrupt_Handler(){
           insertProcQ(&ready_queue_h, wakeup_proc);
         }
 
-        dev->command = DEV_C_ACK;//acknowledgement
-
         //parte immediatamente un'altra operazione (se c'è)
         if(*semDevices.disk[i].s_key < 0){
           wakeup_proc = removeBlocked(semDevices.disk[i].s_key);
           (*semDevices.disk[i].s_key)++;
           Do_IO(wakeup_proc->command, (U32 *) dev, 0);
         }
+        else dev->command = DEV_C_ACK;//acknowledgement se non c'è un'altra operazione da fare
       }
     }
   }
@@ -107,14 +106,13 @@ void Interrupt_Handler(){
           insertProcQ(&ready_queue_h, wakeup_proc);
         }
 
-        dev->command = DEV_C_ACK;//acknowledgement
-
         //parte immediatamente un'altra operazione (se c'è)
         if(*semDevices.tape[i].s_key < 0){
           wakeup_proc = removeBlocked(semDevices.tape[i].s_key);
           (*semDevices.tape[i].s_key)++;
           Do_IO(wakeup_proc->command, (U32 *) dev, 0);
         }
+        else dev->command = DEV_C_ACK;//acknowledgement se non c'è un'altra operazione da fare
       }
     }
   }
@@ -138,14 +136,13 @@ void Interrupt_Handler(){
           insertProcQ(&ready_queue_h, wakeup_proc);
         }
 
-        dev->command = DEV_C_ACK;//acknowledgement
-
         //parte immediatamente un'altra operazione (se c'è)
         if(*semDevices.network[i].s_key < 0){
           wakeup_proc = removeBlocked(semDevices.network[i].s_key);
           (*semDevices.network[i].s_key)++;
           Do_IO(wakeup_proc->command, (U32 *) dev, 0);
         }
+        else dev->command = DEV_C_ACK;//acknowledgement se non c'è un'altra operazione da fare
       }
     }
   }
@@ -170,14 +167,13 @@ void Interrupt_Handler(){
           insertProcQ(&ready_queue_h, wakeup_proc);
         }
 
-        dev->command = DEV_C_ACK;//acknowledgement
-
         //parte immediatamente un'altra operazione (se c'è)
         if(*semDevices.printer[i].s_key < 0){
           wakeup_proc = removeBlocked(semDevices.printer[i].s_key);
           (*semDevices.printer[i].s_key)++;
           Do_IO(wakeup_proc->command, (U32 *) dev, 0);
         }
+        else dev->command = DEV_C_ACK;//acknowledgement se non c'è un'altra operazione da fare
       }
     }
   }
@@ -215,8 +211,6 @@ void Interrupt_Handler(){
                   insertProcQ(&ready_queue_h, wakeup_proc);
                 }
 
-            term->recv_command = DEV_C_ACK;
-
             //prossima operazione
             if(*semDevices.terminalR[i].s_key < 0){
 
@@ -225,6 +219,7 @@ void Interrupt_Handler(){
               //chiamata di IO sul terminale in ricezione
               Do_IO(wakeup_proc->command,(U32 *) term, TRUE);
             }
+            else dev->command = DEV_C_ACK;//acknowledgement se non c'è un'altra operazione da fare
           }
 
           if((term->transm_status & STATUSMASK) != DEV_S_READY){
@@ -240,8 +235,7 @@ void Interrupt_Handler(){
                 insertProcQ(&ready_queue_h, wakeup_proc);
               }
 
-
-              term->transm_command = DEV_C_ACK;
+              //NB niente verhogen perchè, la V non ritorna un pcb_t
 
               //prossima operazione
               if(*semDevices.terminalT[i].s_key < 0){
@@ -251,6 +245,7 @@ void Interrupt_Handler(){
                 //chiamata di IO sul terminale in trasmissione
                 Do_IO(wakeup_proc->command,(U32 *) term, FALSE);
               }
+              else term->transm_command = DEV_C_ACK;
             }
         }
 
@@ -269,13 +264,9 @@ int getDevice(int line_no, int dev_no){
   /*una parola è riservata in memoria per indicare quale device ha interrupts pendenti
   sulle linee da 3 a 7. Quindi se si tratta del terminale per esempio, è necessario spostarsi
   di 7 - 3 = 4 parole in avanti da PENDING_BITMAP_START. Successivamente è necessario fare uno shift
-  a destra di dev_no posizioni per vedere se il device dev_no associato a line_no ha un interruptpendente.
+  a destra di dev_no posizioni per vedere se il device dev_no associato a line_no ha un interrupt pendente.
   Dopo lo shift si fa un & bitwise con 0x00000001 in modo da vedere se effettivamente il bit destinato a
   dev_no è 1. */
-
-  /*se non va prova ad usare le macro in fondo al file const_rikaya
-  if(((PENDING_BITMAP_START + line_no) >> dev_no) & 0x00000001)
-    return 1;*/
 
   if(*INTR_CURRENT_BITMAP(line_no) & (1 << dev_no))
     return 1;

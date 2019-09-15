@@ -35,9 +35,9 @@ HIDDEN void setDefault (pcb_t* p) {
     p->tutor = 0;
     p->command = 0;
 
-    p->oldSYSBP = NULL; 
+    p->oldSYSBP = NULL;
     p->newSYSBP = NULL;
-    p->oldTLB = NULL;	
+    p->oldTLB = NULL;
     p->newTLB = NULL;
     p->oldPGT =	NULL;
     p->newPGT = NULL;
@@ -62,8 +62,8 @@ pcb_t *allocPcb(void){
 	//rimuovo il pcb dalla lista dei processi vuoti
 	list_del(&(punt->p_next));
 
-    //Inizializzo i campi del pcb al loro valore di default
-    setDefault(punt);
+  //Inizializzo i campi del pcb al loro valore di default
+  setDefault(punt);
 
 	return punt;
 }

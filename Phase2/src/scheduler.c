@@ -12,7 +12,6 @@
  * del sistema operativo ad informare lo scheduler della presenza di un nuovo processo.
  * Per questa fase ci limitiamo a gestire i 3 processi di test.
 */
-
 void  context() {
 
 		//controlliamo che il processore sia libero
@@ -29,11 +28,12 @@ void  context() {
 				container_of(iter,pcb_t, p_next)->priority++;
 			}
 
-			//gestione tempo esecuzione del processo, si passa da kernel mode a user mode
-			if(curr_proc->kernel_time_old >= 0){
-				curr_proc->kernel_time_old += getTODLO() - curr_proc->kernel_time_new;
-				curr_proc->kernel_time_new = 0;
-			}
+			/*time management: il processo viene tolto al processore, perciò significa che il suo quanto di tempo
+			è scaduto. Ciò viene segnalato dall'interrupt alzato dal local timer, quindi il processo si trova in kernel
+			mode: ciò implica l'aggiornamento del kernel time del processo.*/
+
+			curr_proc->kernel_time_old += getTODLO() - curr_proc->kernel_time_new;
+			curr_proc->kernel_time_new = 0;
 
 			//reinserimento nella coda dei processi pronti ad essere eseguiti
 			insertProcQ(&ready_queue_h, curr_proc);
@@ -41,7 +41,9 @@ void  context() {
 		//processo con priorità più alta viene tolto dalla ready_queue per essere eseguito
 		curr_proc = removeProcQ(&ready_queue_h);
 
-		//tracciamento tempo esecuzione processo
+		/*time management: se è la prima attivazione del processo, ovvero wallclock time pari a 0, allora
+		si assegna il valore ritornato dalla funzione getTODLO() a wallclock_time. In più il processo si trova in
+		user mode appena caricato perchè esegue il suo codice e non quello di un'eccezione.*/
 		if(!curr_proc->wallclock_time)
 			curr_proc->wallclock_time = getTODLO();
 

@@ -60,31 +60,25 @@ int Terminate_Process(void **pid){
 
 			//curr_proc ha padre, si cerca il tutor per la progenie di curr_proc (la radice è sempre tutor)
 			pcb_t *tmp = curr_proc->p_parent;
-			while(tmp->tutor == 0)
+
+			while(tmp->tutor == FALSE)
 				tmp = tmp->p_parent;
 
 			//tmp è il tutor, inserisco come figli di tmp i figli di curr_proc, se curr_proc ha figli
-			if(~emptyChild(curr_proc)){
-				struct list_head* iter ;
-				list_for_each(iter,&ready_queue_h){
-					container_of(iter,pcb_t,p_next)->p_parent = tmp;
+			if(!emptyChild(curr_proc)){
+				struct list_head* iter;
+				list_for_each(iter, &ready_queue_h){
+					container_of(iter, pcb_t, p_next)->p_parent = tmp;
 				}
 			}
-/*
-			//si toglie il curr_proc dalla ready_queue_h
-			if(outProcQ(&ready_queue_h, curr_proc) == NULL)
-				return -1;//non va fatto il curr_proc non si trova nella ready queue
-*/
+
 			//si toglie il curr_proc dalla lista dei figli del padre (che c'è di sicuro)
 			outChild(curr_proc->p_parent);
 
 			//si restituisce il pcb alla pcbFree list
 			freePcb(curr_proc);
-/*
-			//si toglie il pcb del semaforo in cui è bloccato
-			if(outBlocked(curr_proc))
-				ProcBlocked--;//nemmeno questo, il curr_proc se sta girando non è bloccato su un semaforo
-*/
+
+			curr_proc = NULL;
 			scheduler();
 
 			return 0;
@@ -100,7 +94,7 @@ int Terminate_Process(void **pid){
 			while(tmp->tutor == 0)
 				tmp = tmp->p_parent;
 
-			if(~emptyChild(q)){
+			if(!emptyChild(q)){
 				struct list_head* iter ;
 				list_for_each(iter,&ready_queue_h){
 					container_of(iter,pcb_t,p_next)->p_parent = tmp;
@@ -155,9 +149,14 @@ void Passeren(int *semaddr){
 	(*semaddr)--;
 
 	if(*semaddr < 0){
-		if(~insertBlocked(semaddr, curr_proc)){
+		if(!insertBlocked(semaddr, curr_proc)){
 			ProcBlocked++;
 			curr_proc->p_semkey = semaddr;
+
+			//time management
+			curr_proc->kernel_time_old += getTODLO() - curr_proc->kernel_time_new;
+			curr_proc->kernel_time_old = 0;
+
 			outProcQ(&ready_queue_h, curr_proc);
 			curr_proc = NULL;
 			scheduler();
@@ -172,8 +171,9 @@ void Wait_Clock(){
 	definita nella fase 1 per la ASL). Una volta passato il tick del clock del sistema sarà necessario
 	fare un numero di Verhogen in modo da risvegliare tutti i processi bloccati.*/
 
-	if(*semDevices.pseudoclock.s_key)//siginifica che il semaforo è vuoto, ovvero nessuno ha richiesto la Wait_Clock
+	if(!*semDevices.pseudoclock.s_key)//siginifica che il semaforo è vuoto, ovvero nessuno ha richiesto la Wait_Clock
 		SET_IT(100);
+
 	Passeren(semDevices.pseudoclock.s_key);
 
 }

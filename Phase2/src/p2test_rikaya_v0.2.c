@@ -135,17 +135,11 @@ void print(char *msg) {
 
 		/*		PANIC(); */
 
-		if ((status & TERMSTATMASK) != TRANSM){
-			/*addokbuf("Panic\n");*/
+		if ((status & TERMSTATMASK) != TRANSM)
 			PANIC();
-		}
 
-
-		if (((status & TERMCHARMASK) >> BYTELEN) != *s){
-			/*addokbuf("PaniC\n");*/
+		if (((status & TERMCHARMASK) >> BYTELEN) != *s)
 			PANIC();
-		}
-
 
 		s++;
 	}
@@ -283,7 +277,6 @@ void test() {
 
 	/* P1 blocks until p3 ends */
 	SYSCALL(PASSEREN, (int)&endp3, 0, 0);					/* P(endp3)     */
-
 
 	SYSCALL(CREATEPROCESS, (int)&p4state, DEFAULT_PRIORITY, (int)&p4pid);		/* start p4     */
 
