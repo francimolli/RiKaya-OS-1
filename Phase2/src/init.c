@@ -62,6 +62,8 @@ void initSemDevices(){
   for(int i = 0; i < MAX_DEVICES; i++)
     semDev[i] = 0;
 
+  pseudoclock = 0;
+
   for(int i = 0; i < DEV_PER_INT; i++){
 
    semDevices.disk[i].s_key = &semDev[i];
@@ -74,5 +76,5 @@ void initSemDevices(){
 
    semDevices.terminalT[i].s_key = &semDev[i + 4 * DEV_PER_INT];
   }
-  semDevices.pseudoclock.s_key = &semDev[CLOCK_SEM];
+  pseudoclock_sem.s_key = &pseudoclock;
 }

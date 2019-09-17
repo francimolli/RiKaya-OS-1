@@ -1,5 +1,5 @@
 #include "handler.h"
-
+extern void addokbuf(char *strp);
 void Handler() {
 
 	//creo una variabile che contiene il codice dell'eccezione inizializzata
@@ -8,10 +8,6 @@ void Handler() {
 	if(curr_proc != NULL){
 
 		cause_code = CAUSE_EXCCODE_GET(getCAUSE());
-
-		/*time management: se c'è un processo in esecuzione e questo solleva un'eccezione, allora esso deve
-		passare dalla user mode alla kernel mode. Dunque è necessario aggiornare lo user time e far partire
-		il kernel time.*/
 
 		//controllo se l'accesso sia in usermode, altrimenti si passa la gestione al PgmTrapHandler();
 		if((curr_proc->p_s.status >> 1) & 0x00000001){
@@ -36,14 +32,17 @@ void Handler() {
 				/*quando si affronta un interrupt lo si affronta con la kernel mode abilitata,
 				la virtual memory disabilitata, come già settato in fase di inizializzazione*/
 
+				//time management
 				if(curr_proc != NULL){
 					if(curr_proc->user_time_new > 0){
 						curr_proc->user_time_old += getTODLO() - curr_proc->user_time_new;
 						curr_proc->user_time_new = 0;
 					}
 				}
+
 				Interrupt_Handler();
 
+				//time management
 				if(curr_proc != NULL){
 					curr_proc->user_time_new = getTODLO();
 				}

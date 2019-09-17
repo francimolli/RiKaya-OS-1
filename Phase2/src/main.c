@@ -49,6 +49,10 @@ int main () {
     //inserisco il PCB con l'indirizzo della funzione di test nella lista dei PCB
     insertProcQ (&ready_queue_h, proc);
 
+    /*Si fa partire il timer per lo pseudoclock (UL serve a garantire che quando avviene
+    la moltiplicazione con BUS_TIMESCALE non si verifichi un overflow)*/
+    SET_IT(CLOCKINTERVAL);
+
     //inizio esecuzione
     scheduler();
 

@@ -70,7 +70,6 @@ typedef struct semdev {
 	semd_t printer[DEV_PER_INT];
 	semd_t terminalR[DEV_PER_INT];
 	semd_t terminalT[DEV_PER_INT];
-	semd_t pseudoclock;
 } semdev;
 
 #endif

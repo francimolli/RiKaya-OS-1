@@ -1,13 +1,19 @@
 #include "syscalls.h"
-
+extern void addokbuf(char *strp);
 void Get_CPU_Time(U32 *user, U32 *kernel, U32 *wallclock){
-	/*aggiorno valori del tempo d'esecuzione (lo user_time non necessita di essere aggiornato
-	in quanto non è cambiato durante l'esecuzione della syscall)*/
+	/*aggiorno valori del tempo d'esecuzione: lo user_time non necessita di essere aggiornato
+	in quanto non è cambiato durante l'esecuzione della syscall, a differenza del kernel_time
+	che è iniziato quando si è entrati nel case della syscall(alla fine dello switch delle syscall
+	il kernel sarà ulteriormente aggiornato, perciò basta solo leggere il TODLOW prima di restituire
+	il valore del kernel time)*/
 	curr_proc->kernel_time_old += getTODLO() - curr_proc->kernel_time_new;
 
-	*user = curr_proc->user_time_old;
-	*kernel = curr_proc->kernel_time_old;
-	*wallclock = getTODLO() - curr_proc->wallclock_time;
+	if(user != NULL && user != 0)
+		*user = curr_proc->user_time_old;
+	if(kernel != NULL && kernel != 0)
+		*kernel = curr_proc->kernel_time_old;
+	if(wallclock != NULL && wallclock != 0)
+		*wallclock = getTODLO() - curr_proc->wallclock_time;
 }
 
 int Create_Process(state_t *statep, int priority, void **cpid){
@@ -29,12 +35,8 @@ int Create_Process(state_t *statep, int priority, void **cpid){
 		//inserimento nella coda dei processi del nuovo pcb
 		insertProcQ(&ready_queue_h, child_proc);
 
-		/*nota: se si considera come prima attivazione del processo l'inserimento nella ready_queue allora
-		bisognerebbe fare time management, ma secondo me la prima attivazione avviene quando lo scheduler
-		sceglie per la prima volta il processo*/
-
 		//a questo punto la chiamata ha successo, se cpid != NULL dunque cpid contiene l'indirizzo di child_proc
-		if(cpid != NULL)
+		if(cpid != NULL && cpid != 0)
 			*cpid = child_proc;
 
 		return 0;
@@ -153,9 +155,14 @@ void Passeren(int *semaddr){
 			ProcBlocked++;
 			curr_proc->p_semkey = semaddr;
 
-			//time management
-			curr_proc->kernel_time_old += getTODLO() - curr_proc->kernel_time_new;
-			curr_proc->kernel_time_old = 0;
+			/*time management: il processo verrà tolto dalla ready queue, perciò è necessario aggiornare qui
+			il suo kernel time(altrimenti verrebbe fatto dentro il context switch, ma ciò avviene solo per i processi
+			nella ready queue)*/
+
+			if(curr_proc->kernel_time_new > 0){
+				curr_proc->kernel_time_old += getTODLO() - curr_proc->kernel_time_new;
+				curr_proc->kernel_time_new = 0;
+			}
 
 			outProcQ(&ready_queue_h, curr_proc);
 			curr_proc = NULL;
@@ -169,12 +176,10 @@ void Wait_Clock(){
 	/*sospende il processo che la invoca fino al prossimo tick. Dunque l'operazione richiesta è quella
 	di una Passeren. Risulta necessario creare un nuovo descrittore(grazie alla funzione insertBlocked
 	definita nella fase 1 per la ASL). Una volta passato il tick del clock del sistema sarà necessario
-	fare un numero di Verhogen in modo da risvegliare tutti i processi bloccati.*/
+	fare un numero di Verhogen pari al numero di processi che hanno invocato la waitclock,
+	in modo da risvegliare tutti i processi bloccati.*/
 
-	if(!*semDevices.pseudoclock.s_key)//siginifica che il semaforo è vuoto, ovvero nessuno ha richiesto la Wait_Clock
-		SET_IT(100);
-
-	Passeren(semDevices.pseudoclock.s_key);
+	Passeren(pseudoclock_sem.s_key);
 
 }
 
@@ -252,6 +257,8 @@ void Do_IO(U32 command, U32 *reg, U32 term_command){
 			Passeren(semaddr);
 	}
 	else{
+		/*se il processo ad aver chiamato la Do_IO è il processo risvegliato dopo un'operazione di I/O
+		allora non si richiama lo scheduler dopo aver fatto la P perciò non utilizzo la Passeren*/
 		(*semaddr)--;
 		ProcBlocked++;
 		insertBlocked(semaddr, wakeup_proc);

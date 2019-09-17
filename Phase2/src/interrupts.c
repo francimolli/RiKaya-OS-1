@@ -1,5 +1,5 @@
 #include "interrupts.h"
-
+extern void addokbuf(char *strp);
 void Interrupt_Handler(){
 
   /*per capire quale (o quali) interrupt sta pendendo è necessario controllare
@@ -23,22 +23,19 @@ void Interrupt_Handler(){
      /*quando si solleva questo interrupt, allora tutti
      i processi bloccati sul semaforo della syscall Wait_Clock
      sono risvegliati*/
-     /*versione 1
-     pcb_t *p = curr_proc;
-     while(p != NULL){
-       p = removeBlocked(&wait_clock_sem_key);
-       insertProcQ(&ready_queue_h, p);
-     }*/
 
-     int *semaddr = semDevices.pseudoclock.s_key;
-     while(*semaddr < 0){
-       Verhogen(semaddr);
+     //acknowledgement scrivendo un nuovo valore all'interno dell'interval timer
+     SET_IT(CLOCKINTERVAL);
+
+     //se ci sono processi in attesa sul semaforo dello pseudoclock, allora q != NULL
+     pcb_t *q = headBlocked(pseudoclock_sem.s_key);
+
+     if(q != NULL){
+       while(*pseudoclock_sem.s_key < 0)
+        Verhogen(pseudoclock_sem.s_key);
      }
-
-     SET_IT(100);//acknowledgement scrivendo un nuovo valore all'interno dell'interval timer
-
+     
   }
-
   //NB usa indirizzi per distinguere che dev fa IO
 
   //Disk Interrupt

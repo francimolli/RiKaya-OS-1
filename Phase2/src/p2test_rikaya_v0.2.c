@@ -114,8 +114,6 @@ pid_t childpid, intermediatepid, p8pid;
 void	p2(),p3(),p4(),p5(),p5a(),p5b(),p6(),p7(),p7a(),p5prog(),p5mm();
 void	p5sys(),p8root(),child1(),child2(),p8leaf(),curiousleaf(), intermediate();
 
-extern void addokbuf(char *strp);
-
 /* a procedure to print on terminal 0 */
 void print(char *msg) {
 	unsigned int command;
@@ -136,10 +134,12 @@ void print(char *msg) {
 		/*		PANIC(); */
 
 		if ((status & TERMSTATMASK) != TRANSM)
-			PANIC();
+				PANIC();
+
 
 		if (((status & TERMCHARMASK) >> BYTELEN) != *s)
-			PANIC();
+				PANIC();
+
 
 		s++;
 	}
