@@ -198,6 +198,7 @@ void Do_IO(U32 command, U32 *reg, U32 term_command){
   TERM0ADDR, allora il semaforo è associato ad un terminale e il commando può esssere associato alla
   trasmissione o alla ricezione in base al contenuto della variabile term_command.*/
 
+	//usa offset semafori e non registri per discriminare il device
 	if(reg >= (U32 *)TERM0ADDR){
     //calcolo offset all'interno dell'array di semafori per il terminale
     offset = (reg - (U32 *)TERM0ADDR)/DEV_REG_SIZE_W;
@@ -279,12 +280,13 @@ int Spec_Passup(int type, state_t *old, state_t *new){
 	perciò se un puntatore tra oldSYSBP/newSYSBP, oldTLB/newTLB, oldPGT/newPGT è diverso da NULL, la
 	syscall fallisce.*/
 
-	if(curr_proc->oldSYSBP != NULL ||
-		 curr_proc->newSYSBP != NULL ||
-		 curr_proc->oldTLB != NULL ||
-	 	 curr_proc->newTLB != NULL ||
-	 	 curr_proc->oldPGT != NULL ||
-	 	 curr_proc->newPGT != NULL)
+	if((curr_proc->oldSYSBP != NULL || curr_proc->newSYSBP != NULL) && type == 0)
+		 return -1;
+
+	if((curr_proc->oldTLB != NULL || curr_proc->newTLB != NULL) && type == 1)
+		 return -1;
+
+	if((curr_proc->oldPGT != NULL || curr_proc->newPGT != NULL) && type == 2)
 		 return -1;
 
 	switch(type){

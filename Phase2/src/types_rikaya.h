@@ -39,7 +39,7 @@ typedef struct pcb_t {
 
 	/*spec_passup fields*/
 	state_t *		oldSYSBP;
-	state_t * 		newSYSBP;
+	state_t * 	newSYSBP;
 	state_t *		oldTLB;
 	state_t *		newTLB;
 	state_t *		oldPGT;

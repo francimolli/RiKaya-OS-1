@@ -55,7 +55,7 @@ void Handler() {
 
 		case EXC_TLBMOD :
 
-			//copio nello state_t del processo che ha ricevuto l'interrupt ciò che risiede nella old area
+			//copio nello state_t del processo che ha ricevuto la trap ciò che risiede nella old area
 			cpy_state((state_t*) TLB_OLDAREA, &curr_proc->p_s);
 
 			//incremento il PC
@@ -63,14 +63,12 @@ void Handler() {
 
 			//richiamo gestore di livello superiore
 			TlbTrapHandler();
-
-			LDST((state_t *) TLB_OLDAREA);
 
 			break;
 
 		case EXC_TLBINVLOAD :
 
-			//copio nello state_t del processo che ha ricevuto l'interrupt ciò che risiede nella old area
+			//copio nello state_t del processo che ha ricevuto la trap ciò che risiede nella old area
 			cpy_state((state_t*) TLB_OLDAREA, &curr_proc->p_s);
 
 			//incremento il PC
@@ -78,14 +76,12 @@ void Handler() {
 
 			//richiamo gestore di livello superiore
 			TlbTrapHandler();
-
-			LDST((state_t *) TLB_OLDAREA);
 
 			break;
 
 		case EXC_TLBINVSTORE :
 
-			//copio nello state_t del processo che ha ricevuto l'interrupt ciò che risiede nella old area
+			//copio nello state_t del processo che ha ricevuto la trap ciò che risiede nella old area
 			cpy_state((state_t*) TLB_OLDAREA, &curr_proc->p_s);
 
 			//incremento il PC
@@ -94,13 +90,11 @@ void Handler() {
 			//richiamo gestore di livello superiore
 			TlbTrapHandler();
 
-			LDST((state_t *) TLB_OLDAREA);
-
 			break;
 
 		case EXC_ADDRINVLOAD :
 
-			//copio nello state_t del processo che ha ricevuto l'interrupt ciò che risiede nella old area
+			//copio nello state_t del processo che ha ricevuto la trap ciò che risiede nella old area
 			cpy_state((state_t*) PGMTRAP_OLDAREA, &curr_proc->p_s);
 
 			//incremento il PC
@@ -108,14 +102,12 @@ void Handler() {
 
 			//richiamo gestore di livello superiore
 			PgmTrapHandler();
-
-			LDST((state_t *) PGMTRAP_OLDAREA);
 
 			break;
 
 		case EXC_ADDRINVSTORE :
 
-			//copio nello state_t del processo che ha ricevuto l'interrupt ciò che risiede nella old area
+			//copio nello state_t del processo che ha ricevuto la trap ciò che risiede nella old area
 			cpy_state((state_t*) PGMTRAP_OLDAREA, &curr_proc->p_s);
 
 			//incremento il PC
@@ -123,14 +115,12 @@ void Handler() {
 
 			//richiamo gestore di livello superiore
 			PgmTrapHandler();
-
-			LDST((state_t *) PGMTRAP_OLDAREA);
 
 			break;
 
 		case EXC_BUSINVFETCH :
 
-			//copio nello state_t del processo che ha ricevuto l'interrupt ciò che risiede nella old area
+			//copio nello state_t del processo che ha ricevuto la trap ciò che risiede nella old area
 			cpy_state((state_t*) PGMTRAP_OLDAREA, &curr_proc->p_s);
 
 			//incremento il PC
@@ -138,14 +128,12 @@ void Handler() {
 
 			//richiamo gestore di livello superiore
 			PgmTrapHandler();
-
-			LDST((state_t *) PGMTRAP_OLDAREA);
 
 			break;
 
 		case EXC_BUSINVLDSTORE :
 
-			//copio nello state_t del processo che ha ricevuto l'interrupt ciò che risiede nella old area
+			//copio nello state_t del processo che ha ricevuto la trap ciò che risiede nella old area
 			cpy_state((state_t*) PGMTRAP_OLDAREA, &curr_proc->p_s);
 
 			//incremento il PC
@@ -153,8 +141,6 @@ void Handler() {
 
 			//richiamo gestore di livello superiore
 			PgmTrapHandler();
-
-			LDST((state_t *) PGMTRAP_OLDAREA);
 
 			break;
 
@@ -165,7 +151,7 @@ void Handler() {
 					curr_proc->user_time_new = 0;
 				}
 				curr_proc->kernel_time_new = getTODLO();
-				//copio nello state_t del processo che ha ricevuto l'exception ciò che risiede nella old area
+				//copio nello state_t del processo che ha ricevuto la trap ciò che risiede nella old area
 				cpy_state((state_t*) SYSBK_OLDAREA, &curr_proc->p_s);
 
 				//incremento del program counter di una WORD_SIZE
@@ -250,6 +236,7 @@ void Handler() {
 							PgmTrapHandler();
 						else{
 							Terminate_Process(0);
+							curr_proc = NULL;
 							scheduler();
 						}
 						break;
@@ -269,7 +256,7 @@ void Handler() {
 
 		case EXC_BREAKPOINT : //handler BREAKPOINT
 
-				//copio nello state_t del processo che ha ricevuto l'interrupt ciò che risiede nella old area
+				//copio nello state_t del processo che ha ricevuto la trap ciò che risiede nella old area
 				cpy_state((state_t*) SYSBK_OLDAREA, &curr_proc->p_s);
 
 				//incremento il PC
@@ -278,13 +265,11 @@ void Handler() {
 				//richiamo gestore di livello superiore
 				SysBpTrapHandler();
 
-				LDST((state_t *) SYSBK_OLDAREA);
-
 			break;
 
 		case EXC_RESERVEDINSTR :
 
-			//copio nello state_t del processo che ha ricevuto l'interrupt ciò che risiede nella old area
+			//copio nello state_t del processo che ha ricevuto la trap ciò che risiede nella old area
 			cpy_state((state_t*) PGMTRAP_OLDAREA, &curr_proc->p_s);
 
 			//incremento il PC
@@ -292,14 +277,12 @@ void Handler() {
 
 			//richiamo gestore di livello superiore
 			PgmTrapHandler();
-
-			LDST((state_t *) PGMTRAP_OLDAREA);
 
 			break;
 
 		case EXC_COPROCUNUSABLE :
 
-			//copio nello state_t del processo che ha ricevuto l'interrupt ciò che risiede nella old area
+			//copio nello state_t del processo che ha ricevuto la trap ciò che risiede nella old area
 			cpy_state((state_t*) PGMTRAP_OLDAREA, &curr_proc->p_s);
 
 			//incremento il PC
@@ -307,14 +290,12 @@ void Handler() {
 
 			//richiamo gestore di livello superiore
 			PgmTrapHandler();
-
-			LDST((state_t *) PGMTRAP_OLDAREA);
 
 			break;
 
 		case EXC_ARITHOVERFLOW :
 
-			//copio nello state_t del processo che ha ricevuto l'interrupt ciò che risiede nella old area
+			//copio nello state_t del processo che ha ricevuto la trap ciò che risiede nella old area
 			cpy_state((state_t*) PGMTRAP_OLDAREA, &curr_proc->p_s);
 
 			//incremento il PC
@@ -323,13 +304,11 @@ void Handler() {
 			//richiamo gestore di livello superiore
 			PgmTrapHandler();
 
-			LDST((state_t *) PGMTRAP_OLDAREA);
-
 			break;
 
 		case EXC_BADPTE :
 
-			//copio nello state_t del processo che ha ricevuto l'interrupt ciò che risiede nella old area
+			//copio nello state_t del processo che ha ricevuto la trap ciò che risiede nella old area
 			cpy_state((state_t*) TLB_OLDAREA, &curr_proc->p_s);
 
 			//incremento il PC
@@ -337,14 +316,12 @@ void Handler() {
 
 			//richiamo gestore di livello superiore
 			TlbTrapHandler();
-
-			LDST((state_t *) TLB_OLDAREA);
 
 			break;
 
 		case EXC_PTEMISS :
 
-			//copio nello state_t del processo che ha ricevuto l'interrupt ciò che risiede nella old area
+			//copio nello state_t del processo che ha ricevuto la trap ciò che risiede nella old area
 			cpy_state((state_t*) TLB_OLDAREA, &curr_proc->p_s);
 
 			//incremento il PC
@@ -352,8 +329,6 @@ void Handler() {
 
 			//richiamo gestore di livello superiore
 			TlbTrapHandler();
-
-			LDST((state_t *) TLB_OLDAREA);
 
 			break;
 
@@ -367,6 +342,7 @@ void Handler() {
 	    curr_proc = NULL;
 
 	    scheduler();
+
 		break;
 	}
 }

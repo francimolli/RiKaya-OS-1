@@ -291,7 +291,7 @@ void test() {
 	print("p1 knows p5 ended\n");
 
 	SYSCALL(PASSEREN, (int)&blkp4, 0, 0);					/* P(blkp4)		*/
-
+	print("here");
 	/* now for a more rigorous check of process termination */
 	for (p8inc = 0; p8inc < 4; p8inc++) {
 		creation = SYSCALL(CREATEPROCESS, (int)&p8rootstate, DEFAULT_PRIORITY, 0);
@@ -588,6 +588,7 @@ void p5a() {
 
 	/* generate a TLB exception by turning on VM without setting up the
 		 seg tables */
+
 	p5Status = getSTATUS();
 	p5Status = p5Status | 0x03000000;
 	setSTATUS(p5Status);
