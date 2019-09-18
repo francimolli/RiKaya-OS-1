@@ -36,7 +36,7 @@ int Create_Process(state_t *statep, int priority, void **cpid){
 		insertProcQ(&ready_queue_h, child_proc);
 
 		//a questo punto la chiamata ha successo, se cpid != NULL dunque cpid contiene l'indirizzo di child_proc
-		if(cpid != NULL && cpid != 0)
+		if(cpid)
 			*cpid = child_proc;
 
 		return 0;
@@ -93,23 +93,33 @@ int Terminate_Process(void **pid){
 		if(lookup_proc(curr_proc, q)){
 
 			pcb_t *tmp = q->p_parent;
-			while(tmp->tutor == 0)
+			while(tmp->tutor == FALSE)
 				tmp = tmp->p_parent;
 
 			if(!emptyChild(q)){
-				struct list_head* iter ;
+				struct list_head* iter;
 				list_for_each(iter,&ready_queue_h){
 					container_of(iter,pcb_t,p_next)->p_parent = tmp;
 				}
 			}
 
-			if(outProcQ(&ready_queue_h, q) == NULL)
-				return -1;
+			if(q->p_semkey == NULL){//il pcb da eliminare si trova nella ready_queue
+				outProcQ(&ready_queue_h, q);
+			}
+			else{//il pcb da eliminare si trova bloccato su un semaforo
+				pcb_t *p = outBlocked(q);
+
+				if(p != NULL){
+					int *sem = p->p_semkey;
+					(*sem)++;
+					ProcBlocked--;
+				}
+				else return -1; //errore
+			}
 
 			outChild(q->p_parent);
 			freePcb(q);
-			if(outBlocked(q))
-				ProcBlocked--;
+
 			return 0;
 		}
 
@@ -329,9 +339,9 @@ void Get_pid_ppid(void **pid, void **ppid){
 
 	/*assegna l'identificativo del curr_proc a *pid (se pid != NULL),
 	e l'identificativo del processo genitore a *ppid (se ppid != NULL)*/
-	if(pid != NULL)
+	if(pid)
 		*pid = curr_proc;
 
-	if(ppid != NULL)
+	if(ppid)
 		*ppid = curr_proc->p_parent;
 }

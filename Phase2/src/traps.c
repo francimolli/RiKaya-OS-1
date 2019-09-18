@@ -1,5 +1,5 @@
 #include "traps.h"
-extern void addokbuf(char *strp);
+
 void SysBpTrapHandler(){
 
     if(curr_proc->newSYSBP == NULL){
@@ -32,7 +32,7 @@ void TlbTrapHandler(){
     scheduler();
   }
   else{
-    
+
     /*c'è un gestore di livello superiore di tipo TLB, perciò si copia nell'old area lo stato del processo
     corrente e si carica nel curr_proc il codice della new area.*/
     cpy_state(&curr_proc->p_s, curr_proc->oldTLB);

@@ -291,7 +291,7 @@ void test() {
 	print("p1 knows p5 ended\n");
 
 	SYSCALL(PASSEREN, (int)&blkp4, 0, 0);					/* P(blkp4)		*/
-	print("here");
+
 	/* now for a more rigorous check of process termination */
 	for (p8inc = 0; p8inc < 4; p8inc++) {
 		creation = SYSCALL(CREATEPROCESS, (int)&p8rootstate, DEFAULT_PRIORITY, 0);
@@ -617,6 +617,9 @@ void p5b() {
 
 	SYSCALL(VERHOGEN, (int)&blkp4, 0, 0);			/* V(blkp4) */
 
+	if(blkp4 == 0)
+		print("Yeah");
+
 	SYSCALL(VERHOGEN, (int)&endp5, 0, 0);			/* V(endp5) */
 
 	print("p5 - try to redefine PGMVECT, it will cause p5 termination\n");
@@ -665,7 +668,7 @@ void p8root() {
 	int		grandchild;
 
 	print("p8root starts\n");
-
+	
 	SYSCALL(PASSEREN, (int)&blkp8, 0, 0);
 	SYSCALL(CREATEPROCESS, (int)&child1state, DEFAULT_PRIORITY, (pid_t)&childpid);
 	SYSCALL(CREATEPROCESS, (int)&child2state, DEFAULT_PRIORITY, 0);

@@ -1,5 +1,5 @@
 #include "handler.h"
-extern void addokbuf(char *strp);
+
 void Handler() {
 
 	//creo una variabile che contiene il codice dell'eccezione inizializzata
