@@ -24,114 +24,103 @@ int Create_Process(state_t *statep, int priority, void **cpid){
 		//se la lista dei pcb liberi (pcbFree) è vuota allora non è stato possibile allocare il pcb
 		if(child_proc == NULL)
 			return -1;
+		else{
+			//pcb allocato
+			cpy_state(statep, &child_proc->p_s);//set campo p_s del nuovo pcb
+			child_proc->original_priority = priority;//set priorità del nuovo pcb
+			child_proc->priority = priority;
 
-		//pcb allocato
-		cpy_state(statep, &child_proc->p_s);//set campo p_s del nuovo pcb
-		child_proc->original_priority = child_proc->priority = priority;//set priorità del nuovo pcb
+			//child_proc viene reso figlio del chiamante ovvero curr_proc
+			insertChild(curr_proc, child_proc);
 
-		//child_proc viene reso figlio del chiamante ovvero curr_proc
-		insertChild(curr_proc, child_proc);
+			//inserimento nella coda dei processi del nuovo pcb
+			insertProcQ(&ready_queue_h, child_proc);
 
-		//inserimento nella coda dei processi del nuovo pcb
-		insertProcQ(&ready_queue_h, child_proc);
+			//a questo punto la chiamata ha successo, se cpid != NULL allora cpid contiene l'indirizzo di child_proc
+			if(cpid != NULL && cpid != 0){
+				*((pcb_t **)cpid) = child_proc;
+			}
 
-		//a questo punto la chiamata ha successo, se cpid != NULL dunque cpid contiene l'indirizzo di child_proc
-		if(cpid)
-			*cpid = child_proc;
-
-		return 0;
+			return 0;
+		}
 }
 
 int Terminate_Process(void **pid){
 
 		/*quando un processo viene terminato:
 			-il processo da eliminare va tolto dalla ready_queue_h
-			-la lista dei processi liberi (pcbFree) riceve un nuovo pcb_t allocabile
-			-va tolto dalle code dei semafori in cui il processo potrebbe essere bloccato
+			-la lista dei processi liberi (pcbFree) riceve un nuovo pcb_t allocabile(si usa freePcb)
+			-va tolto dalle code dei semafori in cui il processo potrebbe essere bloccato(se non è il curr_proc)
 		Inoltre se il processo terminato è il curr_proc, allora va tolto dal processore il processo corrente
 		e richiamato lo scheduler*/
+		pcb_t *target_proc;
 
-		//NB: probabilmente si può fare meglio in termini di costo computazionale
-
-		//caso in cui pid sia il curr_proc
 		if(pid == NULL || pid == 0){
+			//il processo da eliminare è quello corrente
+			target_proc = curr_proc;
+		}
+		else{
+			//il processo da eliminare non è quello corrente
+			target_proc = *((pcb_t **)pid);
+		}
 
-			//curr_proc non ha padre, errore
-			if(curr_proc->p_parent == NULL)
-				return -1;
+		//se il processo da eliminare non ha padre, vuol dire che è il root processo, errore
+		if(target_proc->p_parent == NULL)
+			return -1;
 
-			//curr_proc ha padre, si cerca il tutor per la progenie di curr_proc (la radice è sempre tutor)
-			pcb_t *tmp = curr_proc->p_parent;
+		/*se pid != NULL allora esso deve trovarsi nella progenie del curr_proc,
+		dato che in C le espressioni sono valutate in modo lazy è possibile scrivere la seguente condizione.
+		lookup_proc ritorna false se il processo non si trova nella progenie*/
+		if(pid != NULL && pid != 0 && !lookup_proc(curr_proc, target_proc))
+			return -1;
 
-			while(tmp->tutor == FALSE)
-				tmp = tmp->p_parent;
+		//la progenie del processo da terminare non viene eliminata
+		if(!emptyChild(target_proc)){
+			//il processo ha figli, vanno inseriti come figli del primo processo indicato come tutor (alla peggio è il root)
+			pcb_t *tutor = target_proc->p_parent;
+			while(!tutor->tutor)
+				tutor = tutor->p_parent;
 
-			//tmp è il tutor, inserisco come figli di tmp i figli di curr_proc, se curr_proc ha figli
-			if(!emptyChild(curr_proc)){
-				struct list_head* iter;
-				list_for_each(iter, &ready_queue_h){
-					container_of(iter, pcb_t, p_next)->p_parent = tmp;
-				}
-			}
+			//offspring inserita come child del tutor
+			pcb_t *child;
+			do{
+				child = removeChild(target_proc);
+				insertChild(tutor, child);
+			}while(child != NULL);
+		}
 
-			//si toglie il curr_proc dalla lista dei figli del padre (che c'è di sicuro)
-			outChild(curr_proc->p_parent);
+		//il target_proc va eliminato dalla lista dei figli del padre
+		outChild(target_proc);
 
-			//si restituisce il pcb alla pcbFree list
-			freePcb(curr_proc);
+		if(target_proc->p_semkey != NULL){
+			//il processo da eliminare non è quello corrente perchè è bloccato su un semaforo (la sua p_semkey è != da NULL)
+			int *sem = target_proc->p_semkey;
+			outBlocked(target_proc);
+			//incremento si fa su sem, dopo outBlocked non si può più accedere alla key del semaforo tramite target_proc
+			(*sem)++;
+			ProcBlocked--;
 
+			//il processo va tolto anche dalla ready_queue se non è quello corrente
+			outProcQ(&ready_queue_h, target_proc);
+		}
+
+		freePcb(target_proc);
+
+		if(curr_proc == target_proc){
 			curr_proc = NULL;
 			scheduler();
-
-			return 0;
 		}
 
-		/*caso in cui pid punta ad un processo che non è quello corrente:
-		il processo da terminare deve essere discendente del processo corrente*/
-
-		pcb_t *q = *pid;
-		if(lookup_proc(curr_proc, q)){
-
-			pcb_t *tmp = q->p_parent;
-			while(tmp->tutor == FALSE)
-				tmp = tmp->p_parent;
-
-			if(!emptyChild(q)){
-				struct list_head* iter;
-				list_for_each(iter,&ready_queue_h){
-					container_of(iter,pcb_t,p_next)->p_parent = tmp;
-				}
-			}
-
-			if(q->p_semkey == NULL){//il pcb da eliminare si trova nella ready_queue
-				outProcQ(&ready_queue_h, q);
-			}
-			else{//il pcb da eliminare si trova bloccato su un semaforo
-				pcb_t *p = outBlocked(q);
-
-				if(p != NULL){
-					int *sem = p->p_semkey;
-					(*sem)++;
-					ProcBlocked--;
-				}
-				else return -1; //errore
-			}
-
-			outChild(q->p_parent);
-			freePcb(q);
-
-			return 0;
-		}
-
-		return -1;
+		return 0;
 }
 
-int lookup_proc(pcb_t *p, pcb_t *q){
-	if(q->p_parent == p)
-		return 1;
+//ritorna true se il processo da terminare si trova all'interno della progenie del curr_proc
+int lookup_proc(pcb_t *curr, pcb_t *q){
+	if(q->p_parent == curr)
+		return TRUE;
 	else if(q->p_parent == NULL)
-		return 0;
-	else return lookup_proc(p, q->p_parent);
+		return FALSE;
+	else return lookup_proc(curr, q->p_parent);
 }
 
 void Verhogen(int *semaddr){

@@ -668,7 +668,7 @@ void p8root() {
 	int		grandchild;
 
 	print("p8root starts\n");
-	
+
 	SYSCALL(PASSEREN, (int)&blkp8, 0, 0);
 	SYSCALL(CREATEPROCESS, (int)&child1state, DEFAULT_PRIORITY, (pid_t)&childpid);
 	SYSCALL(CREATEPROCESS, (int)&child2state, DEFAULT_PRIORITY, 0);

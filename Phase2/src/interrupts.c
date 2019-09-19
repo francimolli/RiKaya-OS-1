@@ -34,7 +34,7 @@ void Interrupt_Handler(){
        while(*pseudoclock_sem.s_key < 0)
         Verhogen(pseudoclock_sem.s_key);
      }
-     
+
   }
   //NB usa indirizzi per distinguere che dev fa IO
 
@@ -228,7 +228,6 @@ void Interrupt_Handler(){
                 (*semDevices.terminalT[i].s_key)++;
                 ProcBlocked--;
                 wakeup_proc->p_s.reg_v0 = term->transm_status;
-
                 insertProcQ(&ready_queue_h, wakeup_proc);
               }
 
