@@ -12,7 +12,7 @@
 /*dichiariamo qui la ready_queue in modo che sia visibile
 dallo scheduler ma possa venir inizializzata nel main*/
 struct list_head ready_queue_h;
-pcb_t* curr_proc;
+pcb_t *curr_proc;
 int ProcBlocked;//integer per contare i processi bloccati su un semaforo
 
 void scheduler();

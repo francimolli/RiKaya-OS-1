@@ -1,12 +1,12 @@
 #include "interrupts.h"
-extern void addokbuf(char *strp);
+
 void Interrupt_Handler(){
 
   /*per capire quale (o quali) interrupt sta pendendo è necessario controllare
   ciascun bit del campo IP del registro CAUSE. Si utilizza la macro CAUSE_IP_GET
   per verificare se l'i-esimo bit di IP vale 1.*/
 
-  U32 cause = old_area->cause;
+  U32 cause = ((state_t *)INT_OLDAREA)->cause;
 
   dtpreg_t *dev;//puntatore al registro del device che ha sollevato l'interrupt
   termreg_t *term;//puntatore al registro del terminale che ha sollevato l'interrupt
@@ -260,8 +260,8 @@ int getDevice(int line_no, int dev_no){
   /*una parola è riservata in memoria per indicare quale device ha interrupts pendenti
   sulle linee da 3 a 7. Quindi se si tratta del terminale per esempio, è necessario spostarsi
   di 7 - 3 = 4 parole in avanti da PENDING_BITMAP_START. Successivamente è necessario fare uno shift
-  a destra di dev_no posizioni per vedere se il device dev_no associato a line_no ha un interrupt pendente.
-  Dopo lo shift si fa un & bitwise con 0x00000001 in modo da vedere se effettivamente il bit destinato a
+  di un 1 a sinistra di dev_no posizioni per vedere se il device dev_no associato a line_no ha un interrupt pendente.
+  Dopo lo shift si fa un & bitwise con *INTR_CURRENT_BITMAP(line_no) in modo da vedere se effettivamente il bit destinato a
   dev_no è 1. */
 
   if(*INTR_CURRENT_BITMAP(line_no) & (1 << dev_no))

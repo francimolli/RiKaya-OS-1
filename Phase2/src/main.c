@@ -28,9 +28,6 @@ int main () {
     //Inizializzo i semafori relativi ai devices e allo pseudo-clock
     initSemDevices();
 
-    //Inizializzo puntatore a INT_OLDAREA per il caso in cui il processore sia in Wait
-    old_area = (state_t *) INT_OLDAREA;;
-
     //Inizializzo il puntatore al processo corrente
     curr_proc = NULL;
 
@@ -39,15 +36,15 @@ int main () {
 
     /*Alloco il processo di test, inizializzando il PCB relativo ed assegnandoli
     puntatore all'area di memoria della sua funzione*/
-    proc = allocAndSet ((memaddr)test, 1);
+    proc = allocAndSet ((memaddr)test, DEFAULT_PRIORIY);
 
     //il processo iniziale deve sempre essere il tutor per i processi orfani
     proc->tutor = TRUE;
 
-    mkEmptyProcQ (&ready_queue_h);
+    mkEmptyProcQ(&ready_queue_h);
 
     //inserisco il PCB con l'indirizzo della funzione di test nella lista dei PCB
-    insertProcQ (&ready_queue_h, proc);
+    insertProcQ(&ready_queue_h, proc);
 
     /*Si fa partire il timer per lo pseudoclock (UL serve a garantire che quando avviene
     la moltiplicazione con BUS_TIMESCALE non si verifichi un overflow)*/

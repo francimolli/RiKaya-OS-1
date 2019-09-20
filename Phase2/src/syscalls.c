@@ -1,5 +1,5 @@
 #include "syscalls.h"
-extern void addokbuf(char *strp);
+
 void Get_CPU_Time(U32 *user, U32 *kernel, U32 *wallclock){
 	/*aggiorno valori del tempo d'esecuzione: lo user_time non necessita di essere aggiornato
 	in quanto non è cambiato durante l'esecuzione della syscall, a differenza del kernel_time
@@ -133,9 +133,13 @@ void Verhogen(int *semaddr){
 
 	if(*semaddr <= 0){
 		if(p != NULL){
-
+			//processo tolto dal semaforo, si aggiorna la sua p_semkey
 			p->p_semkey = NULL;
+
+			//un processo bloccato in meno
 			ProcBlocked--;
+
+			//si rimette il processo nella ready queue
 			insertProcQ(&ready_queue_h, p);
 		}
 	}
@@ -151,18 +155,21 @@ void Passeren(int *semaddr){
 
 	if(*semaddr < 0){
 		if(!insertBlocked(semaddr, curr_proc)){
+			//un processo bloccato in più
 			ProcBlocked++;
+
+			//si tiene traccia del semaforo su cui si blocca il processo
 			curr_proc->p_semkey = semaddr;
 
 			/*time management: il processo verrà tolto dalla ready queue, perciò è necessario aggiornare qui
 			il suo kernel time(altrimenti verrebbe fatto dentro il context switch, ma ciò avviene solo per i processi
 			nella ready queue)*/
-
 			if(curr_proc->kernel_time_new > 0){
 				curr_proc->kernel_time_old += getTODLO() - curr_proc->kernel_time_new;
 				curr_proc->kernel_time_new = 0;
 			}
 
+			//si toglie il processo dalla ready queue
 			outProcQ(&ready_queue_h, curr_proc);
 			curr_proc = NULL;
 			scheduler();
@@ -173,10 +180,7 @@ void Passeren(int *semaddr){
 void Wait_Clock(){
 
 	/*sospende il processo che la invoca fino al prossimo tick. Dunque l'operazione richiesta è quella
-	di una Passeren. Risulta necessario creare un nuovo descrittore(grazie alla funzione insertBlocked
-	definita nella fase 1 per la ASL). Una volta passato il tick del clock del sistema sarà necessario
-	fare un numero di Verhogen pari al numero di processi che hanno invocato la waitclock,
-	in modo da risvegliare tutti i processi bloccati.*/
+	di una Passeren.*/
 
 	Passeren(pseudoclock_sem.s_key);
 
@@ -197,7 +201,6 @@ void Do_IO(U32 command, U32 *reg, U32 term_command){
   TERM0ADDR, allora il semaforo è associato ad un terminale e il commando può esssere associato alla
   trasmissione o alla ricezione in base al contenuto della variabile term_command.*/
 
-	//usa offset semafori e non registri per discriminare il device
 	if(reg >= (U32 *)TERM0ADDR){
     //calcolo offset all'interno dell'array di semafori per il terminale
     offset = (reg - (U32 *)TERM0ADDR)/DEV_REG_SIZE_W;

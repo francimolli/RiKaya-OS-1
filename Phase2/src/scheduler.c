@@ -5,12 +5,16 @@
  * dove vengono inizializzate le varie strutture e dopodichè passa il testimone
  * allo scheduler che si occupa totalmente da quel momento in poi della gestione
  * dei processi. Per questa fase ipotizziamo che venga, fuori dallo scheduler (nel main)
- * inizializzata una coda di processi pronti (test1, test2, test3) che passiamo come parametro
- * allo scheduler, il quale si occuperà della loro corretta esecuzione.
- * Idealmente, lo scheduler dovrebbe permettere l'aggiunta a runtime di ulteriori processi
- * nella coda dei processi pronti, ma questo richiederebbe un (INTERRUPT o SYSCALL?) da parte
- * del sistema operativo ad informare lo scheduler della presenza di un nuovo processo.
- * Per questa fase ci limitiamo a gestire i 3 processi di test.
+ * inizializzato il PCB del processo test che passiamo come parametro
+ * allo scheduler, inserendolo nella ready_queue.
+ * Nello scheduler possono essere aggiunti a run-time nuovi processi creati con la syscall CREATEPROCESS,
+ * come è possibile che il processo corrente o quelli nella ready_queue vengano eliminati dalla syscall
+ * TERMINATEPROCESS.
+ * Questo scheduler, prima di fare il context switch e fare l'aging, controlla se la ready_queue è vuota:
+ * se quest'ultima è vuota e anche il processo corrente è NULL, non significa che il sistema non abbia più
+ * possibili processi da sistemare, infatti potrebbero essere presenti processi bloccati su semafori. Quando
+ * ciò accade si usa la WAIT per attendere un interrupt dal processor local timer, o dall'interval timer, o
+ * da qualche dispositvo di I/O.
 */
 void  context() {
 
@@ -31,7 +35,6 @@ void  context() {
 			/*time management: il processo viene tolto al processore, perciò significa che il suo quanto di tempo
 			è scaduto. Ciò viene segnalato dall'interrupt alzato dal local timer, quindi il processo si trova in kernel
 			mode: ciò implica l'aggiornamento del kernel time del processo.*/
-
 			if(curr_proc->kernel_time_new > 0){
 				curr_proc->kernel_time_old += getTODLO() - curr_proc->kernel_time_new;
 				curr_proc->kernel_time_new = 0;
@@ -59,12 +62,14 @@ void  scheduler(){
 
 	//controllo se ci sono processi da eseguire
 	if(emptyProcQ(&ready_queue_h)){
+		//ready_queue vuota, controllo se il processo corrente è NULL
 		if(curr_proc != NULL)
 			context();
 		else{
+			//processo corrente NULL, si controlla se il numero di processi bloccati è 0
 			if(ProcBlocked > 0){
-				setTIMER(TIME_SLICE);
-				setSTATUS((getSTATUS() | STATUS_IEc) | STATUS_INT_UNMASKED);
+				setTIMER(TIME_SLICE);//interrupt nel caso in cui nel frattempo la ready_queue sia divenuta non vuota
+				setSTATUS((getSTATUS() | STATUS_IEc) | STATUS_INT_UNMASKED);//interrupt abilitati
 				WAIT();
 			}
 			else

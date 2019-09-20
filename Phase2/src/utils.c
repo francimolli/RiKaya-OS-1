@@ -11,3 +11,36 @@ inline void cpy_state(state_t* source, state_t* dest){
 	dest->hi = source->hi;
 	dest->lo = source->lo;
 }
+
+inline void PGMtrap(){
+	//copio nello state_t del processo che ha ricevuto la trap ciò che risiede nella old area
+	cpy_state((state_t*) PGMTRAP_OLDAREA, &curr_proc->p_s);
+
+	//incremento il PC
+	curr_proc->p_s.pc_epc += WORD_SIZE;
+
+	//richiamo gestore di livello superiore
+	PgmTrapHandler();
+}
+
+inline void TLBtrap(){
+	//copio nello state_t del processo che ha ricevuto la trap ciò che risiede nella old area
+	cpy_state((state_t*) TLB_OLDAREA, &curr_proc->p_s);
+
+	//incremento il PC
+	curr_proc->p_s.pc_epc += WORD_SIZE;
+
+	//richiamo gestore di livello superiore
+	TlbTrapHandler();
+}
+
+inline void SYSBPtrap(){
+	//copio nello state_t del processo che ha ricevuto la trap ciò che risiede nella old area
+	cpy_state((state_t*) SYSBK_OLDAREA, &curr_proc->p_s);
+
+	//incremento il PC
+	curr_proc->p_s.pc_epc += WORD_SIZE;
+
+	//richiamo gestore di livello superiore
+	SysBpTrapHandler();
+}
