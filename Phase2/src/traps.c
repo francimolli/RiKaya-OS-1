@@ -40,6 +40,7 @@ void TlbTrapHandler(){
   }
 
 }
+
 void PgmTrapHandler(){
 
   if(curr_proc->newPGT == NULL){

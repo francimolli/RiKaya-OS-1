@@ -8,11 +8,11 @@ void Get_CPU_Time(U32 *user, U32 *kernel, U32 *wallclock){
 	il valore del kernel time)*/
 	curr_proc->kernel_time_old += getTODLO() - curr_proc->kernel_time_new;
 
-	if(user != NULL && user != 0)
+	if(user != NULL)
 		*user = curr_proc->user_time_old;
-	if(kernel != NULL && kernel != 0)
+	if(kernel != NULL)
 		*kernel = curr_proc->kernel_time_old;
-	if(wallclock != NULL && wallclock != 0)
+	if(wallclock != NULL)
 		*wallclock = getTODLO() - curr_proc->wallclock_time;
 }
 
@@ -37,9 +37,8 @@ int Create_Process(state_t *statep, int priority, void **cpid){
 			insertProcQ(&ready_queue_h, child_proc);
 
 			//a questo punto la chiamata ha successo, se cpid != NULL allora cpid contiene l'indirizzo di child_proc
-			if(cpid != NULL && cpid != 0){
+			if(cpid != NULL)
 				*((pcb_t **)cpid) = child_proc;
-			}
 
 			return 0;
 		}
@@ -71,7 +70,7 @@ int Terminate_Process(void **pid){
 		/*se pid != NULL allora esso deve trovarsi nella progenie del curr_proc,
 		dato che in C le espressioni sono valutate in modo lazy è possibile scrivere la seguente condizione.
 		lookup_proc ritorna false se il processo non si trova nella progenie*/
-		if(pid != NULL && pid != 0 && !lookup_proc(curr_proc, target_proc))
+		if(pid != NULL && !lookup_proc(curr_proc, target_proc))
 			return -1;
 
 		//la progenie del processo da terminare non viene eliminata
@@ -162,15 +161,13 @@ void Passeren(int *semaddr){
 			curr_proc->p_semkey = semaddr;
 
 			/*time management: il processo verrà tolto dalla ready queue, perciò è necessario aggiornare qui
-			il suo kernel time(altrimenti verrebbe fatto dentro il context switch, ma ciò avviene solo per i processi
-			nella ready queue)*/
+			il suo kernel time. Inoltre viene richiamato subito lo scheduler e quindi l'esecuzione non arriva
+			alla fine dello switch delle syscall dove viene aggiornato il kernel time.*/
 			if(curr_proc->kernel_time_new > 0){
 				curr_proc->kernel_time_old += getTODLO() - curr_proc->kernel_time_new;
 				curr_proc->kernel_time_new = 0;
 			}
 
-			//si toglie il processo dalla ready queue
-			outProcQ(&ready_queue_h, curr_proc);
 			curr_proc = NULL;
 			scheduler();
 		}
@@ -201,12 +198,12 @@ void Do_IO(U32 command, U32 *reg, U32 term_command){
   TERM0ADDR, allora il semaforo è associato ad un terminale e il commando può esssere associato alla
   trasmissione o alla ricezione in base al contenuto della variabile term_command.*/
 
-	if(reg >= (U32 *)TERM0ADDR){
+	if(reg >= (U32 *)TERM0ADDR  && reg <= (U32 *)DEVTOP){
     //calcolo offset all'interno dell'array di semafori per il terminale
     offset = (reg - (U32 *)TERM0ADDR)/DEV_REG_SIZE_W;
 
     //registro associato ad un terminale
-    if(term_command){
+    if(term_command == TRUE){
 
       //richiesta di I/O su un terminale in ricezione, si scrive il comando nel campo recv_command
       semaddr = semDevices.terminalR[offset].s_key;
@@ -215,7 +212,7 @@ void Do_IO(U32 command, U32 *reg, U32 term_command){
 			if(!*semaddr)
 				((termreg_t *)reg)->recv_command = command;
     }
-  	else{
+  	else if(term_command == FALSE){
 
       //richiesta di I/O su un terminale in trasmissione, si scrive il comando nel campo transm_command
       semaddr = semDevices.terminalT[offset].s_key;
@@ -224,8 +221,9 @@ void Do_IO(U32 command, U32 *reg, U32 term_command){
 			if(!*semaddr)
 				((termreg_t *)reg)->transm_command = command;
     }
+		else PANIC();
   }
-  else{
+  else if(reg >= (U32 *)DISK_START && reg <= (U32 *)TERM0ADDR){
     /*per calcolare l'offset è necessario sapere a quale indirizzo di memoria iniziano i registri dedicati ad
     ogni diverso tipo di device tra disk, tape, network e printer. Per ottenere l'indirizzo di memoria in cui
     si trovano i registri associati ai disk, tape, network o printer si usa la macro DEV_ADDRESS(LINENO, DEVNO),
@@ -254,6 +252,7 @@ void Do_IO(U32 command, U32 *reg, U32 term_command){
 		if(!*semaddr)
 			((dtpreg_t *)reg)->command = command;
   }
+	else PANIC();
 
 	//il processo che richiede I/O va bloccato
 	if(wakeup_proc == curr_proc){
@@ -331,9 +330,9 @@ void Get_pid_ppid(void **pid, void **ppid){
 
 	/*assegna l'identificativo del curr_proc a *pid (se pid != NULL),
 	e l'identificativo del processo genitore a *ppid (se ppid != NULL)*/
-	if(pid)
+	if(pid != NULL)
 		*pid = curr_proc;
 
-	if(ppid)
+	if(ppid != NULL)
 		*ppid = curr_proc->p_parent;
 }

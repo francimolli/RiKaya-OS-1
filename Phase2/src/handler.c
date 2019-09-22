@@ -190,14 +190,10 @@ void Handler() {
 
 					default	:
 
-						/*se la syscall chiamata è superiore a 10 si richiama un gestore di trap se presente,
+						/*se la syscall chiamata è superiore a 10 si richiama un gestore di trap di tipo sysbp se presente,
 						altrimenti il processo corrente viene terminato e lo scheduler viene richiamato*/
 						if(curr_proc->newSYSBP != NULL)
 							SysBpTrapHandler();
-						else if(curr_proc->newTLB != NULL)
-							TlbTrapHandler();
-						else if(curr_proc->newPGT != NULL)
-							PgmTrapHandler();
 						else{
 							Terminate_Process(0);
 							curr_proc = NULL;

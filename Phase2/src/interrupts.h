@@ -7,8 +7,7 @@
 
 int semDev[MAX_DEVICES];//array utilizzato per inizializzare i semafori dei devices correttamente
 semdev semDevices;//semdev è la struttura dati contenente i semafori dei devices
-int pseudoclock;//serve per inizializzare e allocare il semaforo della wait clock
-semd_t pseudoclock_sem;//semaforo della wait clockNULL
+semd_t pseudoclock_sem;//semaforo della wait clock
 pcb_t *wakeup_proc;//processo risvegliato da una V quando un device completa l'operazione di I/O
 
 void Interrupt_Handler();

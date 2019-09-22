@@ -36,7 +36,6 @@ void Interrupt_Handler(){
      }
 
   }
-  //NB usa indirizzi per distinguere che dev fa IO
 
   //Disk Interrupt
   if(CAUSE_IP_GET(cause, INT_DISK)){
@@ -231,7 +230,8 @@ void Interrupt_Handler(){
                 insertProcQ(&ready_queue_h, wakeup_proc);
               }
 
-              //NB niente verhogen perchè, la V non ritorna un pcb_t
+              /*NB niente verhogen perchè, la V non ritorna un pcb_t ed è necessario 
+              modificare il campo wakeup_proc->p_s.reg_v0*/
 
               //prossima operazione
               if(*semDevices.terminalT[i].s_key < 0){
@@ -244,9 +244,7 @@ void Interrupt_Handler(){
               else term->transm_command = DEV_C_ACK;
             }
         }
-
     }
-
   }
 
 }

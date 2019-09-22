@@ -31,15 +31,7 @@ void  context() {
 			list_for_each(iter,&ready_queue_h){
 				container_of(iter,pcb_t, p_next)->priority++;
 			}
-
-			/*time management: il processo viene tolto al processore, perciò significa che il suo quanto di tempo
-			è scaduto. Ciò viene segnalato dall'interrupt alzato dal local timer, quindi il processo si trova in kernel
-			mode: ciò implica l'aggiornamento del kernel time del processo.*/
-			if(curr_proc->kernel_time_new > 0){
-				curr_proc->kernel_time_old += getTODLO() - curr_proc->kernel_time_new;
-				curr_proc->kernel_time_new = 0;
-			}
-
+			
 			//reinserimento nella coda dei processi pronti ad essere eseguiti
 			insertProcQ(&ready_queue_h, curr_proc);
 		}

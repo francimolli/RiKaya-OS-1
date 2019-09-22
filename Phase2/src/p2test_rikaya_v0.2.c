@@ -617,9 +617,6 @@ void p5b() {
 
 	SYSCALL(VERHOGEN, (int)&blkp4, 0, 0);			/* V(blkp4) */
 
-	if(blkp4 == 0)
-		print("Yeah");
-
 	SYSCALL(VERHOGEN, (int)&endp5, 0, 0);			/* V(endp5) */
 
 	print("p5 - try to redefine PGMVECT, it will cause p5 termination\n");

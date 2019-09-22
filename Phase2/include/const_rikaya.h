@@ -353,6 +353,9 @@ typedef int S32;
 #define NETWORK_START DEV_ADDRESS(INT_UNUSED - INT_LOWEST, 0)
 #define PRINTER_START DEV_ADDRESS(INT_PRINTER - INT_LOWEST, 0)
 
+/* indirizzo dell'ultimo device utilizzabile nella Do_Io */
+#define DEVTOP DEV_ADDRESS(INT_TERMINAL - INT_LOWEST, 7)
+
 #define CLOCKINTERVAL	100000UL
 
 #endif
